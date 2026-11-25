@@ -16,12 +16,12 @@ async function post(path, body) {
   return { status: response.status, body: await response.json() };
 }
 
-test("la ruta valida y genera nivel 1 por defecto y conserva el nivel 0 explícito", async () => {
-  assert.deepEqual(await post("/api/generate", { sourceJson, validateOnly: true }), {
+test("la ruta conserva validación y ejecución explícitas de los niveles 0 y 1", async () => {
+  assert.deepEqual(await post("/api/generate", { sourceJson, validateOnly: true, level: 1 }), {
     status: 200,
     body: { valid: true },
   });
-  const generated = await post("/api/generate", { sourceJson });
+  const generated = await post("/api/generate", { sourceJson, level: 1 });
   assert.equal(generated.status, 200);
   assert.equal(generated.body.level, 1);
   assert.equal(generated.body.maxCredits, 7);
@@ -38,15 +38,19 @@ test("la ruta valida y genera nivel 1 por defecto y conserva el nivel 0 explíci
 test("distingue un archivo inválido de una instancia válida sin horario", async () => {
   const unavailable = structuredClone(sourceJson);
   unavailable.catalogo.grupos[0].cuposDisponibles = 0;
-  const generated = await post("/api/generate", { sourceJson: unavailable });
+  const generated = await post("/api/generate", { sourceJson: unavailable, level: 1 });
   assert.equal(generated.status, 200);
   assert.deepEqual(generated.body.schedules, []);
   assert.match(generated.body.reason, /Materia alta A: sin grupos con cupos/);
   delete unavailable.estudiante.materias[0].prioridad;
-  const invalid = await post("/api/generate", { sourceJson: unavailable, validateOnly: true });
+  const invalid = await post("/api/generate", {
+    sourceJson: unavailable,
+    validateOnly: true,
+    level: 1,
+  });
   assert.equal(invalid.status, 400);
   assert.match(invalid.body.error, /prioridad de la materia A/);
-  assert.equal((await post("/api/generate", { sourceJson, level: 2 })).status, 400);
+  assert.equal((await post("/api/generate", { sourceJson, level: 3 })).status, 400);
 });
 
 test("POST de guardado rechaza altas omitidas, adiciones, sustituciones y cruces", async () => {

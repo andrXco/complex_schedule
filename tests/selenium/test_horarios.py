@@ -123,7 +123,7 @@ class HorariosSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["1", str(count)],
+            ["2", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
@@ -140,6 +140,26 @@ class HorariosSelenium(unittest.TestCase):
         self.click("Usar JSON de ejemplo")
         self.wait_valid()
         self.generate(2)
+        criteria = self.browser.find_element(By.CSS_SELECTOR, ".criteria").text
+        self.assertIn("Mínimo de 8 créditos", criteria)
+        self.assertIn("Máximo de 11 créditos", criteria)
+        self.assertEqual(
+            [badge.text for badge in self.browser.find_elements(By.CSS_SELECTOR, ".credit-pill")],
+            ["11 créditos totales", "11 créditos totales"],
+        )
+
+    def test_informa_un_rango_valido_sin_horarios(self):
+        self.enter_as(OWNER)
+        self.open_upload()
+        source = json.loads((FIXTURES / "prioridades.json").read_text(encoding="utf-8"))
+        source["estudiante"].update({"creditosMin": 8, "creditosMax": 9})
+        path = self.files / "minimo-inalcanzable.json"
+        path.write_text(json.dumps(source), encoding="utf-8")
+        self.upload(path)
+        self.wait_valid()
+        self.generate(0)
+        notice = self.browser.find_element(By.CSS_SELECTOR, "main .footnote")
+        self.assertIn("8 a 9 créditos", notice.text)
 
     def test_excluye_grupo_lleno_y_muestra_sesiones_contiguas(self):
         self.enter_as(OWNER)
@@ -194,6 +214,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertEqual(result["totalCredits"], 4)
         self.assertEqual(result["omitted"][0]["courseId"], "B")
         text = self.download("Descargar TXT", "Horario 1.txt")
+        self.assertIn("Nivel 2 · 4 créditos totales", text)
         self.assertIn("Materias omitidas", text)
         self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
@@ -209,10 +230,15 @@ class HorariosSelenium(unittest.TestCase):
         source = json.loads((FIXTURES / "prioridades.json").read_text(encoding="utf-8"))
         source["estudiante"]["materias"][0]["prioridad"] = "urgente"
         invalid_priority.write_text(json.dumps(source), encoding="utf-8")
+        invalid_range = self.files / "rango-invertido.json"
+        source["estudiante"]["materias"][0]["prioridad"] = "alta"
+        source["estudiante"]["creditosMin"] = 8
+        invalid_range.write_text(json.dumps(source), encoding="utf-8")
         for path, error in [
             (malformed, "no contiene JSON válido"),
             (FIXTURES / "cupos-invalidos.json", "cuposDisponibles"),
             (invalid_priority, "prioridad de la materia A"),
+            (invalid_range, "creditosMin debe ser menor o igual"),
         ]:
             with self.subTest(filename=path.name):
                 self.upload(path)
@@ -277,7 +303,7 @@ class HorariosSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 1", card.text)
+                self.assertIn("Nivel alcanzado: 2", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)

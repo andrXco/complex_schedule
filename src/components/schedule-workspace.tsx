@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
-import type { LevelOneResponse } from "../application/scheduling/prepare-level-one";
+import type { LevelTwoResponse } from "../application/scheduling/prepare-level-two";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
 type User = { id: string; name: string; email: string };
@@ -578,7 +578,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: LevelOneResponse | null;
+  result: LevelTwoResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -612,9 +612,8 @@ function Generated({
                 <em>Sesiones sin cruces</em>
                 <em>Grupos con cupo</em>
                 <em>Prioridades de materias</em>
-                {result.maxCredits !== null && (
-                  <em>Hasta {result.maxCredits} créditos al agregar o sustituir</em>
-                )}
+                {result.minCredits > 0 && <em>Mínimo de {result.minCredits} créditos</em>}
+                {result.maxCredits !== null && <em>Máximo de {result.maxCredits} créditos</em>}
               </div>
             </div>
           </section>
@@ -900,7 +899,7 @@ function DownloadButtons({ item, fullLabel = false }: { item: ScheduleView; full
       ),
     ]);
     const omissions = omissionLabels(item);
-    const summary = item.level === 1 ? [`Nivel ${item.level} · ${scheduleSize(item)}`] : [];
+    const summary = item.level >= 1 ? [`Nivel ${item.level} · ${scheduleSize(item)}`] : [];
     const omitted = omissions.length
       ? ["", "Materias omitidas", ...omissions.map(({ label }) => `  ${label}`)]
       : [];
@@ -962,7 +961,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<LevelOneResponse | null>(null);
+  const [result, setResult] = useState<LevelTwoResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -993,7 +992,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<LevelOneResponse>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelTwoResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {

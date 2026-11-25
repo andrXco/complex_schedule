@@ -11,6 +11,8 @@
     "test:level-zero": "docker compose up -d --wait db && node --experimental-strip-types --test tests/level-zero.test.mjs tests/level-zero-input.test.mjs",
     "test:level-one": "node --experimental-strip-types --test tests/level-one.test.mjs",
     "test:level-one:api": "node --test tests/level-one-api.test.mjs",
+    "test:level-two": "node --experimental-strip-types --test tests/level-two.test.mjs",
+    "test:level-two:api": "node --test tests/level-two-api.test.mjs",
     "test:selenium": "python -B -m unittest discover -s tests/selenium -v",
     "test:selenium:brave": "python -B tests/selenium/test_horarios.py --brave -v"
   },

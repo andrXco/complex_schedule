@@ -3,6 +3,7 @@ import {
   generateLevelOneSchedules,
   type LevelOneOmission,
   type PrioritizedCourse,
+  type PrioritizedResult,
   type Priority,
 } from "../../domain/scheduling/level-one.ts";
 import {
@@ -30,13 +31,7 @@ type LevelOneInput = ReturnType<typeof readLevelOneInput>;
 
 export function readLevelOneInput(input: unknown) {
   const { catalog, student, requests, courses, coursesWithGroups } = readScheduleInput(input);
-  const { creditosMax } = student;
-  if (
-    creditosMax !== undefined &&
-    (typeof creditosMax !== "number" || !Number.isSafeInteger(creditosMax) || creditosMax < 1)
-  ) {
-    throw new Error("estudiante.creditosMax debe ser un entero mayor que cero.");
-  }
+  const maxCredits = readCreditLimit(student.creditosMax, "creditosMax") ?? Infinity;
 
   const catalogCourses = asArray(catalog.materias, "catalogo.materias debe ser una lista");
   const creditsByCourse = new Map<string, number>();
@@ -69,33 +64,46 @@ export function readLevelOneInput(input: unknown) {
   });
   return {
     courses: prioritizedCourses,
-    maxCredits: creditosMax ?? Infinity,
+    maxCredits,
+    minCreditsInput: student.creditosMin,
     coursesWithGroups,
   };
+}
+
+export function readCreditLimit(value: unknown, field: "creditosMin" | "creditosMax") {
+  if (value === undefined) return undefined;
+  if (typeof value !== "number" || !Number.isSafeInteger(value) || value < 1) {
+    throw new Error(`estudiante.${field} debe ser un entero mayor que cero.`);
+  }
+  return value;
 }
 
 export function prepareLevelOne(input: unknown, maxSchedules = 100): LevelOneResponse {
   const parsed = readLevelOneInput(input);
   const { courses, maxCredits } = parsed;
-  const { schedules, truncated, unavailableHigh } = generateLevelOneSchedules(
-    courses,
-    maxCredits,
-    maxSchedules,
-  );
+  const result = generateLevelOneSchedules(courses, maxCredits, maxSchedules);
+  return { level: 1, ...formatPrioritizedResult(parsed, result) };
+}
 
+export function formatPrioritizedResult(
+  parsed: LevelOneInput,
+  { schedules, truncated, unavailableHigh }: PrioritizedResult,
+  emptyReason?: string,
+): Omit<LevelOneResponse, "level"> {
+  const { courses, maxCredits } = parsed;
   const reason = unavailableHigh.length
     ? unavailableHigh
         .map((id) => `Materia alta ${id}: ${sectionUnavailable(parsed, id)}.`)
         .join(" ")
     : schedules.length === 0
-      ? `No se encontró una combinación sin cruces para las materias altas (${courses
+      ? (emptyReason ??
+        `No se encontró una combinación sin cruces para las materias altas (${courses
           .filter(({ priority }) => priority === "alta")
           .map(({ courseId }) => courseId)
-          .join(", ")}).`
+          .join(", ")}).`)
       : null;
 
   return {
-    level: 1,
     truncated,
     reason,
     maxCredits: Number.isFinite(maxCredits) ? maxCredits : null,
@@ -112,7 +120,13 @@ export function validateLevelOneSelection(
   input: unknown,
   selection: unknown,
 ): Omit<PrioritizedSchedule, "name"> {
-  const parsed = readLevelOneInput(input);
+  return validatePrioritizedSelection(readLevelOneInput(input), selection);
+}
+
+export function validatePrioritizedSelection(
+  parsed: LevelOneInput,
+  selection: unknown,
+): Omit<PrioritizedSchedule, "name"> {
   const assignments = readScheduleSelection(parsed.courses, selection);
   const evaluation = evaluateLevelOneSelection(parsed.courses, assignments, parsed.maxCredits);
   if (!evaluation.valid) {
