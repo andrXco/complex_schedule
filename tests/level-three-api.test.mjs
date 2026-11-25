@@ -16,8 +16,8 @@ async function post(path, body) {
   return { status: response.status, body: await response.json() };
 }
 
-test("la API genera el nivel 3 por defecto y conserva el nivel 2 explícito", async () => {
-  const current = await post("/api/generate", { sourceJson });
+test("la API admite el nivel 3 explícito y conserva el nivel 2", async () => {
+  const current = await post("/api/generate", { sourceJson, level: 3 });
   assert.equal(current.status, 200);
   assert.equal(current.body.level, 3);
   assert.equal(current.body.schedules.length, 2);
@@ -38,11 +38,14 @@ test("la API genera el nivel 3 por defecto y conserva el nivel 2 explícito", as
 test("un archivo válido con la única opción en almuerzo devuelve cero horarios", async () => {
   const blocked = structuredClone(sourceJson);
   blocked.catalogo.grupos = blocked.catalogo.grupos.filter(({ id }) => id !== "SOF-02");
-  assert.deepEqual(await post("/api/generate", { sourceJson: blocked, validateOnly: true }), {
-    status: 200,
-    body: { valid: true },
-  });
-  const result = await post("/api/generate", { sourceJson: blocked });
+  assert.deepEqual(
+    await post("/api/generate", { sourceJson: blocked, validateOnly: true, level: 3 }),
+    {
+      status: 200,
+      body: { valid: true },
+    },
+  );
+  const result = await post("/api/generate", { sourceJson: blocked, level: 3 });
   assert.equal(result.status, 200);
   assert.deepEqual(result.body.schedules, []);
   assert.match(result.body.reason, /almuerzo de 13:00 a 14:00/);

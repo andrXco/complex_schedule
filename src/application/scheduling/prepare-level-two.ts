@@ -14,7 +14,7 @@ export type LevelTwoResponse = Omit<LevelOneResponse, "level"> & {
 
 export function readLevelTwoInput(input: unknown) {
   const parsed = readLevelOneInput(input);
-  const minCredits = readCreditLimit(parsed.minCreditsInput, "creditosMin") ?? 0;
+  const minCredits = readCreditLimit(parsed.student.creditosMin, "creditosMin") ?? 0;
   if (minCredits > parsed.maxCredits) {
     throw new Error("estudiante.creditosMin debe ser menor o igual que estudiante.creditosMax.");
   }
@@ -37,7 +37,13 @@ export function prepareLevelTwo(input: unknown, maxSchedules = 100): LevelTwoRes
 }
 
 export function validateLevelTwoSelection(input: unknown, selection: unknown) {
-  const parsed = readLevelTwoInput(input);
+  return validateCreditSelection(readLevelTwoInput(input), selection);
+}
+
+export function validateCreditSelection(
+  parsed: ReturnType<typeof readLevelTwoInput>,
+  selection: unknown,
+) {
   const result = validatePrioritizedSelection(parsed, selection);
   const { totalCredits } = result;
   if (totalCredits < parsed.minCredits) {

@@ -65,7 +65,7 @@ un grupo cuesta `O(1)`. La búsqueda conserva la cota de peor caso del
 
 ## Aplicación y pruebas
 
-`POST /api/generate` usa el nivel 3 por defecto y permite solicitar de forma
+`POST /api/generate` ejecuta este nivel con `level: 3` y permite solicitar de forma
 explícita los niveles 0, 1 y 2. El calendario marca el espacio protegido.
 Al guardar, el servidor reconstruye las sesiones con el catálogo fuente y
 comprueba nuevamente la ventana.

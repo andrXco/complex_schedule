@@ -123,7 +123,7 @@ class HorariosSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["3", str(count)],
+            ["4", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
@@ -171,6 +171,21 @@ class HorariosSelenium(unittest.TestCase):
         self.generate(0)
         notice = self.browser.find_element(By.CSS_SELECTOR, "main .footnote")
         self.assertIn("8 a 9 créditos", notice.text)
+
+    def test_descuenta_el_almuerzo_al_aplicar_cero_huecos(self):
+        self.enter_as(OWNER)
+        self.open_upload()
+        self.upload(FIXTURES / "huecos.json")
+        self.wait_valid()
+        self.generate(1)
+        self.assertIn("Sin huecos", self.browser.find_element(By.CSS_SELECTOR, ".criteria").text)
+        self.click("Ver calendario")
+        self.heading("Horario 1")
+        sessions = self.browser.find_elements(By.CSS_SELECTOR, ".timetable .class-block")
+        self.assertEqual([item.get_attribute("title") for item in sessions], [
+            "Algoritmos · Grupo A1 · 12:00–13:00",
+            "Estadística · Grupo B1 · 14:00–15:00",
+        ])
 
     def test_excluye_grupo_lleno_y_muestra_sesiones_contiguas(self):
         self.enter_as(OWNER)
@@ -225,7 +240,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertEqual(result["totalCredits"], 4)
         self.assertEqual(result["omitted"][0]["courseId"], "B")
         text = self.download("Descargar TXT", "Horario 1.txt")
-        self.assertIn("Nivel 3 · 4 créditos totales", text)
+        self.assertIn("Nivel 4 · 4 créditos totales", text)
         self.assertIn("Materias omitidas", text)
         self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
@@ -314,7 +329,7 @@ class HorariosSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 3", card.text)
+                self.assertIn("Nivel alcanzado: 4", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)

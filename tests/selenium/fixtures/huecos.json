@@ -1,0 +1,37 @@
+{
+  "catalogo": {
+    "materias": [
+      { "id": "A", "nombre": "Algoritmos", "creditos": 4 },
+      { "id": "B", "nombre": "Estadística", "creditos": 3 }
+    ],
+    "grupos": [
+      {
+        "id": "A1",
+        "materiaId": "A",
+        "cuposDisponibles": 2,
+        "sesiones": [{ "dia": "lunes", "inicio": "12:00", "fin": "13:00" }]
+      },
+      {
+        "id": "B1",
+        "materiaId": "B",
+        "cuposDisponibles": 2,
+        "sesiones": [{ "dia": "lunes", "inicio": "14:00", "fin": "15:00" }]
+      },
+      {
+        "id": "B2",
+        "materiaId": "B",
+        "cuposDisponibles": 2,
+        "sesiones": [{ "dia": "lunes", "inicio": "14:30", "fin": "15:30" }]
+      }
+    ]
+  },
+  "estudiante": {
+    "creditosMin": 7,
+    "creditosMax": 7,
+    "huecos": { "tipo": "ninguno" },
+    "materias": [
+      { "materiaId": "A", "prioridad": "alta" },
+      { "materiaId": "B", "prioridad": "alta" }
+    ]
+  }
+}
