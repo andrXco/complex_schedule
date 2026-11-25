@@ -1,6 +1,6 @@
 import { searchPrioritizedSchedules, type PrioritizedCourse } from "./level-one.ts";
 import { isOutsideLunch, lunchWindow } from "./lunch-window.ts";
-import type { ScheduledMeeting } from "./section-conflicts.ts";
+import type { CourseSection, ScheduledMeeting } from "./section-conflicts.ts";
 
 export function findExcessiveGap(meetings: readonly ScheduledMeeting[], maxMinutes: number) {
   const ordered = [...meetings].sort(
@@ -35,12 +35,15 @@ export function generateLevelFourSchedules(
     maxGapMinutes: number | null;
   },
   maxSchedules = 100,
+  additionalSectionCheck?: (section: CourseSection) => boolean,
 ) {
   return searchPrioritizedSchedules(courses, {
     minCredits,
     maxCredits,
     maxSchedules,
-    canSelectSection: isOutsideLunch,
+    canSelectSection: additionalSectionCheck
+      ? (section) => isOutsideLunch(section) && additionalSectionCheck(section)
+      : isOutsideLunch,
     acceptsMeetings:
       maxGapMinutes === null ? undefined : (meetings) => !findExcessiveGap(meetings, maxGapMinutes),
   });

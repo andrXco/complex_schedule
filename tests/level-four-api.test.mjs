@@ -16,8 +16,8 @@ async function post(path, body) {
   return { status: response.status, body: await response.json() };
 }
 
-test("la API aplica los huecos por defecto y conserva el nivel 3 explícito", async () => {
-  const generated = await post("/api/generate", { sourceJson });
+test("la API admite el nivel 4 explícito y conserva el nivel 3", async () => {
+  const generated = await post("/api/generate", { sourceJson, level: 4 });
   assert.equal(generated.status, 200);
   assert.equal(generated.body.level, 4);
   assert.equal(generated.body.maxGapMinutes, 0);
@@ -33,7 +33,11 @@ test("la API aplica los huecos por defecto y conserva el nivel 3 explícito", as
 test("la API rechaza huecos cortos sin máximo y rechaza guardar un hueco excesivo", async () => {
   const malformed = structuredClone(sourceJson);
   malformed.estudiante.huecos = { tipo: "cortos" };
-  const validation = await post("/api/generate", { sourceJson: malformed, validateOnly: true });
+  const validation = await post("/api/generate", {
+    sourceJson: malformed,
+    validateOnly: true,
+    level: 4,
+  });
   assert.equal(validation.status, 400);
   assert.match(validation.body.error, /huecos.maxMinutos/);
 

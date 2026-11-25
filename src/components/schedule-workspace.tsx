@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
-import type { LevelFourResponse } from "../application/scheduling/prepare-level-four";
+import type { LevelFiveResponse } from "../application/scheduling/prepare-level-five";
 import { lunchWindow } from "../domain/scheduling/lunch-window";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
@@ -579,7 +579,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: LevelFourResponse | null;
+  result: LevelFiveResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -619,6 +619,12 @@ function Generated({
                 {result.maxGapMinutes !== null && (
                   <em>
                     {result.maxGapMinutes === 0 ? "Sin huecos" : `Huecos de hasta ${result.maxGapMinutes} min`}
+                  </em>
+                )}
+                {result.preferredWindow && (
+                  <em>
+                    Franja preferida de {formatTime(result.preferredWindow.startMinute)} a{" "}
+                    {formatTime(result.preferredWindow.endMinute)}
                   </em>
                 )}
               </div>
@@ -980,7 +986,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<LevelFourResponse | null>(null);
+  const [result, setResult] = useState<LevelFiveResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -1011,7 +1017,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<LevelFourResponse>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelFiveResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {

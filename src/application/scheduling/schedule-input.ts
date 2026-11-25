@@ -184,7 +184,7 @@ function normalizeDay(value: unknown): string {
   return dayAliases[key];
 }
 
-function normalizeTime(value: unknown, label: string): number {
+export function normalizeTime(value: unknown, label: string): number {
   if (typeof value === "number" && Number.isInteger(value)) return value;
   if (typeof value === "string") {
     const match = /^(\d{1,2}):(\d{2})$/.exec(value.trim());

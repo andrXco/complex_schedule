@@ -3,6 +3,7 @@ import { pool } from "../../../src/infrastructure/postgres/pool";
 import { validateLevelOneSelection } from "../../../src/application/scheduling/prepare-level-one";
 import { validateLevelThreeSelection } from "../../../src/application/scheduling/prepare-level-three";
 import { validateLevelFourSelection } from "../../../src/application/scheduling/prepare-level-four";
+import { validateLevelFiveSelection } from "../../../src/application/scheduling/prepare-level-five";
 import { validateLevelTwoSelection } from "../../../src/application/scheduling/prepare-level-two";
 import {
   validateLevelZeroSelection,
@@ -19,6 +20,7 @@ const validators = {
   2: validateLevelTwoSelection,
   3: validateLevelThreeSelection,
   4: validateLevelFourSelection,
+  5: validateLevelFiveSelection,
 };
 
 export async function GET(request: Request) {
@@ -93,7 +95,8 @@ export async function POST(request: Request) {
       body.level !== 1 &&
       body.level !== 2 &&
       body.level !== 3 &&
-      body.level !== 4)
+      body.level !== 4 &&
+      body.level !== 5)
   ) {
     return NextResponse.json(
       { error: "Faltan datos válidos para guardar el horario." },
