@@ -21,6 +21,10 @@ import {
   readLevelSixInput,
 } from "../../../src/application/scheduling/prepare-level-six";
 import {
+  prepareLevelSeven,
+  readLevelSevenInput,
+} from "../../../src/application/scheduling/prepare-level-seven";
+import {
   prepareLevelZero,
   readLevelZeroCourses,
 } from "../../../src/application/scheduling/prepare-level-zero";
@@ -35,6 +39,7 @@ const levels = {
   4: { validate: readLevelFourInput, generate: prepareLevelFour },
   5: { validate: readLevelFiveInput, generate: prepareLevelFive },
   6: { validate: readLevelSixInput, generate: prepareLevelSix },
+  7: { validate: readLevelSevenInput, generate: prepareLevelSeven },
 };
 
 export async function POST(request: Request) {
@@ -47,9 +52,9 @@ export async function POST(request: Request) {
     if (body?.sourceJson === undefined) {
       return NextResponse.json({ error: "Envía el contenido del archivo JSON." }, { status: 400 });
     }
-    const level = body.level === undefined ? 6 : body.level;
+    const level = body.level === undefined ? 7 : body.level;
     if (typeof level !== "number" || !Object.prototype.hasOwnProperty.call(levels, level)) {
-      return NextResponse.json({ error: "El nivel debe estar entre 0 y 6." }, { status: 400 });
+      return NextResponse.json({ error: "El nivel debe estar entre 0 y 7." }, { status: 400 });
     }
     const { validate, generate } = levels[level as keyof typeof levels];
     if (body.validateOnly === true) {

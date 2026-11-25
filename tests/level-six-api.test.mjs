@@ -19,7 +19,7 @@ async function post(path, body) {
 test("la API aplica el día libre al generar y rechaza guardar sesiones de ese día", async () => {
   const sourceJson = structuredClone(sample);
   sourceJson.estudiante.diasLibres = ["viernes"];
-  const current = await post("/api/generate", { sourceJson });
+  const current = await post("/api/generate", { sourceJson, level: 6 });
   assert.equal(current.status, 200);
   assert.equal(current.body.level, 6);
   assert.deepEqual(current.body.daysOff, ["5"]);
