@@ -29,8 +29,15 @@ docker compose exec -T db psql -U complex_schedule -d complex_schedule -v ON_ERR
 Para iniciar la aplicación, copia `.env.example` a `.env.local`, inicia la base
 con `docker compose up -d --wait db` y ejecuta `pnpm dev`. Las rutas
 `/api/users` y `/api/schedules` conectan Next.js con PostgreSQL;
-`/api/generate` ejecuta el algoritmo de nivel cero sobre el JSON cargado.
+`/api/generate` ejecuta el algoritmo de nivel 1 sobre el JSON cargado.
 Supabase Auth se integrará en una etapa posterior.
+
+## Pruebas del nivel 1
+
+`pnpm run test:level-one` ejecuta las pruebas de dominio y del adaptador JSON.
+Para verificar generación y validación al guardar por HTTP, levanta
+PostgreSQL y Next y ejecuta `pnpm run test:level-one:api`. La suite HTTP usa
+`http://localhost:3000` o el valor de `SCHEDULE_BASE_URL`.
 
 ## Pruebas de navegador con Selenium
 
@@ -68,6 +75,6 @@ usa un ChromeDriver compatible con la versión de Chromium que muestra
 `brave://version` y configura `CHROMEDRIVER_PATH` con su ruta.
 
 Las pruebas cargan el ejemplo público y los archivos en `tests/selenium/fixtures`.
-Cubren cupos, cruces, archivos inválidos, calendario, descargas y guardado
-compartido. La prueba que guarda horarios usa datos temporales en PostgreSQL y
-los retira al terminar.
+Cubren cupos, cruces, archivos inválidos, omisiones, prioridad de las materias,
+calendario, descargas y guardado compartido. La prueba que guarda horarios usa
+datos temporales en PostgreSQL y los retira al terminar.

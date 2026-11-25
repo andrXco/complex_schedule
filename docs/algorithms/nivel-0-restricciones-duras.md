@@ -112,9 +112,9 @@ volumen: opciones sin cruces (4 horarios), conflicto inevitable (0 horarios) y
 cruce anidado con sesiones contiguas (6 horarios). La prueba consulta esos
 registros y compara el resultado del generador con el conteo esperado; también
 comprueba que ningún horario devuelto tenga traslapes. La ruta de Next
-`/api/generate` adapta el JSON real y llama al mismo generador. Las pruebas del
-JSON también cubren grupos llenos, cupos inválidos y el caso en que una materia
-se queda sin opciones.
+`/api/generate` adapta el JSON real y llama al mismo generador cuando se
+solicita `level: 0`. Las pruebas del JSON también cubren grupos llenos, cupos
+inválidos y el caso en que una materia se queda sin opciones.
 
 Ejecuta `pnpm test:level-zero` con Docker Desktop disponible. El servicio y los
 datos quedan en el volumen local `postgres_data`.
