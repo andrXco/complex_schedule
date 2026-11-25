@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
-import type { LevelThreeResponse } from "../application/scheduling/prepare-level-three";
+import type { LevelFourResponse } from "../application/scheduling/prepare-level-four";
 import { lunchWindow } from "../domain/scheduling/lunch-window";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
@@ -579,7 +579,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: LevelThreeResponse | null;
+  result: LevelFourResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -616,6 +616,11 @@ function Generated({
                 {result.minCredits > 0 && <em>Mínimo de {result.minCredits} créditos</em>}
                 {result.maxCredits !== null && <em>Máximo de {result.maxCredits} créditos</em>}
                 <em>{lunchLabel}</em>
+                {result.maxGapMinutes !== null && (
+                  <em>
+                    {result.maxGapMinutes === 0 ? "Sin huecos" : `Huecos de hasta ${result.maxGapMinutes} min`}
+                  </em>
+                )}
               </div>
             </div>
           </section>
@@ -975,7 +980,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<LevelThreeResponse | null>(null);
+  const [result, setResult] = useState<LevelFourResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -1006,7 +1011,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<LevelThreeResponse>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelFourResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {

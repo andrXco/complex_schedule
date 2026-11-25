@@ -2,6 +2,7 @@ import {
   buildSectionConflictGraph,
   type CourseRequirement,
   type CourseSection,
+  type ScheduledMeeting,
 } from "./section-conflicts.ts";
 
 export type Priority = "alta" | "media" | "baja";
@@ -55,11 +56,13 @@ export function searchPrioritizedSchedules(
     maxCredits,
     maxSchedules,
     canSelectSection,
+    acceptsMeetings,
   }: {
     minCredits?: number;
     maxCredits: number;
     maxSchedules: number;
     canSelectSection?: (section: CourseSection) => boolean;
+    acceptsMeetings?: (meetings: readonly ScheduledMeeting[]) => boolean;
   },
 ): PrioritizedResult {
   if (!Number.isInteger(maxSchedules) || maxSchedules < 1) {
@@ -115,6 +118,13 @@ export function searchPrioritizedSchedules(
     if (position === order.length) {
       const evaluation = evaluate(graph, courses, selected, totalCredits, maxCredits);
       if (!evaluation.valid) return;
+      if (
+        acceptsMeetings &&
+        !acceptsMeetings(
+          [...selected.values()].flatMap((node) => graph.nodes[node].section.meetings),
+        )
+      )
+        return;
       if (result.schedules.length === maxSchedules) {
         result.truncated = true;
         return;

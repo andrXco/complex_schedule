@@ -65,7 +65,7 @@ export function readLevelOneInput(input: unknown) {
   return {
     courses: prioritizedCourses,
     maxCredits,
-    minCreditsInput: student.creditosMin,
+    student,
     coursesWithGroups,
   };
 }

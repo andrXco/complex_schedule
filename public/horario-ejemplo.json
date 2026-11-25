@@ -61,6 +61,7 @@
   "estudiante": {
     "creditosMin": 8,
     "creditosMax": 11,
+    "huecos": { "tipo": "ninguno" },
     "materias": [
       { "materiaId": "ALG", "prioridad": 1, "profesoresPreferidos": [] },
       { "materiaId": "EST", "prioridad": 2, "profesoresPreferidos": [] },
