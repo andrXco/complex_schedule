@@ -17,6 +17,8 @@
     "test:level-three:api": "node --test tests/level-three-api.test.mjs",
     "test:level-four": "node --experimental-strip-types --test tests/level-four.test.mjs",
     "test:level-four:api": "node --test tests/level-four-api.test.mjs",
+    "test:level-five": "node --experimental-strip-types --test tests/level-five.test.mjs",
+    "test:level-five:api": "node --test tests/level-five-api.test.mjs",
     "test:selenium": "python -B -m unittest discover -s tests/selenium -v",
     "test:selenium:brave": "python -B tests/selenium/test_horarios.py --brave -v"
   },
