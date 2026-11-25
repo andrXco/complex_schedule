@@ -29,7 +29,7 @@ docker compose exec -T db psql -U complex_schedule -d complex_schedule -v ON_ERR
 Para iniciar la aplicación, copia `.env.example` a `.env.local`, inicia la base
 con `docker compose up -d --wait db` y ejecuta `pnpm dev`. Las rutas
 `/api/users` y `/api/schedules` conectan Next.js con PostgreSQL;
-`/api/generate` ejecuta el algoritmo de nivel 2 sobre el JSON cargado.
+`/api/generate` ejecuta el algoritmo de nivel 3 sobre el JSON cargado.
 Supabase Auth se integrará en una etapa posterior.
 
 ## Pruebas del nivel 1
@@ -44,6 +44,12 @@ PostgreSQL y Next y ejecuta `pnpm run test:level-one:api`. La suite HTTP usa
 `pnpm run test:level-two` prueba el cálculo y la validación del rango de
 créditos. Con PostgreSQL y Next activos, `pnpm run test:level-two:api`
 comprueba la generación y el rechazo de guardados fuera del rango.
+
+## Pruebas del nivel 3
+
+`pnpm run test:level-three` prueba la ventana de almuerzo y sus límites.
+Con PostgreSQL y Next activos, `pnpm run test:level-three:api` comprueba
+el filtrado de sesiones al generar y al guardar.
 
 ## Pruebas de navegador con Selenium
 

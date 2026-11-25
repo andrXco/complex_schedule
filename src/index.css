@@ -1121,6 +1121,14 @@
   position: relative;
 }
 
+.lunch-window {
+  position: absolute;
+  inset-inline: 0;
+  border-block: 1px dashed #d5b773;
+  background: #fff6df;
+  pointer-events: none;
+}
+
 .timetable-day .class-block {
   position: absolute;
   inset-inline: 5px;

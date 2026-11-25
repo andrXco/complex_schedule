@@ -53,7 +53,7 @@ export function validateLevelTwoSelection(input: unknown, selection: unknown) {
   return result;
 }
 
-function describeCreditRange(minCredits: number, maxCredits: number): string {
+export function describeCreditRange(minCredits: number, maxCredits: number): string {
   if (!Number.isFinite(maxCredits)) return `al menos ${minCredits} créditos`;
   if (minCredits === 0) return `hasta ${maxCredits} créditos`;
   if (minCredits === maxCredits) return `${minCredits} créditos exactos`;

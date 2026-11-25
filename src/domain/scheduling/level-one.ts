@@ -48,16 +48,18 @@ export function generateLevelTwoSchedules(
   return searchPrioritizedSchedules(courses, { minCredits, maxCredits, maxSchedules });
 }
 
-function searchPrioritizedSchedules(
+export function searchPrioritizedSchedules(
   courses: readonly PrioritizedCourse[],
   {
     minCredits,
     maxCredits,
     maxSchedules,
+    canSelectSection,
   }: {
     minCredits?: number;
     maxCredits: number;
     maxSchedules: number;
+    canSelectSection?: (section: CourseSection) => boolean;
   },
 ): PrioritizedResult {
   if (!Number.isInteger(maxSchedules) || maxSchedules < 1) {
@@ -74,6 +76,14 @@ function searchPrioritizedSchedules(
     .map((index) => courses[index].courseId);
   const result: PrioritizedResult = { schedules: [], truncated: false, unavailableHigh };
   if (unavailableHigh.length) return result;
+  const selectable =
+    canSelectSection && graph.nodes.map(({ section }) => canSelectSection(section));
+  if (
+    selectable &&
+    required.some((course) => !graph.nodesByCourse[course].some((node) => selectable[node]))
+  ) {
+    return result;
+  }
 
   // Establish all required assignments before exploring any optional courses.
   required.sort(
@@ -127,6 +137,8 @@ function searchPrioritizedSchedules(
       alwaysAddable ||=
         lastConflictPosition[node] < position &&
         totalCredits + remainingCredits[position] <= maxCredits;
+      // Later levels restrict selection after the level 1 addability check.
+      if (selectable?.[node] === false) continue;
       selected.set(course, node);
       search(position + 1, totalCredits + courses[course].credits);
       selected.delete(course);
