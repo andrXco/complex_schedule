@@ -101,7 +101,7 @@ Las podas y el límite de salida reducen el trabajo en instancias concretas.
 
 ## Aplicación y pruebas
 
-`POST /api/generate` evalúa el nivel 1 por defecto. La petición admite
+`POST /api/generate` evalúa el nivel 1 con `level: 1`. La petición admite
 `level: 0` para ejecutar el nivel anterior. En el nivel 1, cada opción
 devuelve sus créditos totales, las materias omitidas y sus razones. La
 interfaz muestra estas razones y las conserva en las exportaciones JSON y

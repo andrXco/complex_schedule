@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "../../../src/infrastructure/postgres/pool";
 import { validateLevelOneSelection } from "../../../src/application/scheduling/prepare-level-one";
+import { validateLevelTwoSelection } from "../../../src/application/scheduling/prepare-level-two";
 import {
   validateLevelZeroSelection,
   type GeneratedSchedule,
@@ -76,7 +77,7 @@ export async function POST(request: Request) {
     !body.title.trim() ||
     body.sourceJson === undefined ||
     body.schedule === undefined ||
-    (body.level !== 0 && body.level !== 1)
+    (body.level !== 0 && body.level !== 1 && body.level !== 2)
   ) {
     return NextResponse.json(
       { error: "Faltan datos válidos para guardar el horario." },
@@ -102,9 +103,11 @@ export async function POST(request: Request) {
   try {
     savedSchedule = {
       name: title,
-      ...(body.level === 1
-        ? validateLevelOneSelection(body.sourceJson, body.schedule)
-        : { courses: validateLevelZeroSelection(body.sourceJson, body.schedule) }),
+      ...(body.level === 0
+        ? { courses: validateLevelZeroSelection(body.sourceJson, body.schedule) }
+        : body.level === 1
+          ? validateLevelOneSelection(body.sourceJson, body.schedule)
+          : validateLevelTwoSelection(body.sourceJson, body.schedule)),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "El horario no es válido.";

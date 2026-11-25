@@ -22,7 +22,7 @@ type Evaluation =
   | { valid: true; totalCredits: number; omitted: LevelOneOmission[] }
   | { valid: false; issue: PriorityIssue };
 
-type LevelOneResult = {
+export type PrioritizedResult = {
   schedules: (Extract<Evaluation, { valid: true }> & {
     assignments: Map<string, CourseSection>;
   })[];
@@ -36,7 +36,30 @@ export function generateLevelOneSchedules(
   courses: readonly PrioritizedCourse[],
   maxCredits = Infinity,
   maxSchedules = 100,
-): LevelOneResult {
+): PrioritizedResult {
+  return searchPrioritizedSchedules(courses, { maxCredits, maxSchedules });
+}
+
+export function generateLevelTwoSchedules(
+  courses: readonly PrioritizedCourse[],
+  { minCredits, maxCredits }: { minCredits: number; maxCredits: number },
+  maxSchedules = 100,
+): PrioritizedResult {
+  return searchPrioritizedSchedules(courses, { minCredits, maxCredits, maxSchedules });
+}
+
+function searchPrioritizedSchedules(
+  courses: readonly PrioritizedCourse[],
+  {
+    minCredits,
+    maxCredits,
+    maxSchedules,
+  }: {
+    minCredits?: number;
+    maxCredits: number;
+    maxSchedules: number;
+  },
+): PrioritizedResult {
   if (!Number.isInteger(maxSchedules) || maxSchedules < 1) {
     throw new RangeError("maxSchedules must be a positive integer");
   }
@@ -49,7 +72,7 @@ export function generateLevelOneSchedules(
   const unavailableHigh = required
     .filter((index) => graph.nodesByCourse[index].length === 0)
     .map((index) => courses[index].courseId);
-  const result: LevelOneResult = { schedules: [], truncated: false, unavailableHigh };
+  const result: PrioritizedResult = { schedules: [], truncated: false, unavailableHigh };
   if (unavailableHigh.length) return result;
 
   // Establish all required assignments before exploring any optional courses.
@@ -72,6 +95,13 @@ export function generateLevelOneSchedules(
   const selected = new Map<number, number>();
 
   function search(position: number, totalCredits: number): void {
+    // When evaluating level 2, even selecting every remaining course must leave a chance of reaching the range.
+    if (
+      minCredits !== undefined &&
+      (totalCredits > maxCredits || totalCredits + remainingCredits[position] < minCredits)
+    ) {
+      return;
+    }
     if (position === order.length) {
       const evaluation = evaluate(graph, courses, selected, totalCredits, maxCredits);
       if (!evaluation.valid) return;
