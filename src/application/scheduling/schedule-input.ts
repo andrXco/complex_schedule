@@ -18,6 +18,7 @@ export type GeneratedSchedule = {
   omitted?: { courseId: string; reasons: string[] }[];
   totalCredits?: number;
   professorPreferenceScore?: number;
+  friendMatches?: number;
 };
 
 const dayAliases: Record<string, string> = {

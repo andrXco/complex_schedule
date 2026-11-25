@@ -1,0 +1,57 @@
+{
+  "catalogo": {
+    "materias": [
+      { "id": "A", "nombre": "Algoritmos", "creditos": 4 },
+      { "id": "B", "nombre": "Estadística", "creditos": 3 }
+    ],
+    "profesores": [
+      { "id": "P1", "nombre": "Ana Pérez" },
+      { "id": "P2", "nombre": "Carlos Ruiz" }
+    ],
+    "grupos": [
+      {
+        "id": "A1",
+        "materiaId": "A",
+        "profesorId": "P1",
+        "cuposDisponibles": 2,
+        "inscritos": ["F1"],
+        "sesiones": [{ "dia": "lunes", "inicio": "08:00", "fin": "09:00" }]
+      },
+      {
+        "id": "A2",
+        "materiaId": "A",
+        "profesorId": "P2",
+        "cuposDisponibles": 2,
+        "inscritos": ["F1", "F2", "E3"],
+        "sesiones": [
+          { "dia": "lunes", "inicio": "09:00", "fin": "10:00" },
+          { "dia": "jueves", "inicio": "09:00", "fin": "10:00" }
+        ]
+      },
+      {
+        "id": "B1",
+        "materiaId": "B",
+        "profesorId": "P1",
+        "cuposDisponibles": 2,
+        "inscritos": ["F1"],
+        "sesiones": [{ "dia": "martes", "inicio": "09:00", "fin": "10:00" }]
+      },
+      {
+        "id": "B2",
+        "materiaId": "B",
+        "profesorId": "P1",
+        "cuposDisponibles": 2,
+        "inscritos": ["E3"],
+        "sesiones": [{ "dia": "martes", "inicio": "10:00", "fin": "11:00" }]
+      }
+    ]
+  },
+  "estudiante": {
+    "amigos": ["F1", "F2"],
+    "minCoincidenciasAmigos": 3,
+    "materias": [
+      { "materiaId": "A", "prioridad": "alta", "profesoresPreferidos": ["P1", "P2"] },
+      { "materiaId": "B", "prioridad": "alta" }
+    ]
+  }
+}

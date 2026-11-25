@@ -23,6 +23,8 @@
     "test:level-six:api": "node --test tests/level-six-api.test.mjs",
     "test:level-seven": "node --experimental-strip-types --test tests/level-seven.test.mjs",
     "test:level-seven:api": "node --test tests/level-seven-api.test.mjs",
+    "test:level-eight": "node --experimental-strip-types --test tests/level-eight.test.mjs",
+    "test:level-eight:api": "node --test tests/level-eight-api.test.mjs",
     "test:selenium": "python -B -m unittest discover -s tests/selenium -v",
     "test:selenium:brave": "python -B tests/selenium/test_horarios.py --brave -v"
   },
