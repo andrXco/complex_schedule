@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { pool } from "../../../src/infrastructure/postgres/pool";
 import { validateLevelOneSelection } from "../../../src/application/scheduling/prepare-level-one";
+import { validateLevelThreeSelection } from "../../../src/application/scheduling/prepare-level-three";
 import { validateLevelTwoSelection } from "../../../src/application/scheduling/prepare-level-two";
 import {
   validateLevelZeroSelection,
@@ -8,6 +9,15 @@ import {
 } from "../../../src/application/scheduling/prepare-level-zero";
 
 export const runtime = "nodejs";
+
+const validators = {
+  0: (source: unknown, selection: unknown) => ({
+    courses: validateLevelZeroSelection(source, selection),
+  }),
+  1: validateLevelOneSelection,
+  2: validateLevelTwoSelection,
+  3: validateLevelThreeSelection,
+};
 
 export async function GET(request: Request) {
   const userId = new URL(request.url).searchParams.get("userId");
@@ -77,7 +87,7 @@ export async function POST(request: Request) {
     !body.title.trim() ||
     body.sourceJson === undefined ||
     body.schedule === undefined ||
-    (body.level !== 0 && body.level !== 1 && body.level !== 2)
+    (body.level !== 0 && body.level !== 1 && body.level !== 2 && body.level !== 3)
   ) {
     return NextResponse.json(
       { error: "Faltan datos válidos para guardar el horario." },
@@ -103,11 +113,7 @@ export async function POST(request: Request) {
   try {
     savedSchedule = {
       name: title,
-      ...(body.level === 0
-        ? { courses: validateLevelZeroSelection(body.sourceJson, body.schedule) }
-        : body.level === 1
-          ? validateLevelOneSelection(body.sourceJson, body.schedule)
-          : validateLevelTwoSelection(body.sourceJson, body.schedule)),
+      ...validators[body.level](body.sourceJson, body.schedule),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "El horario no es válido.";

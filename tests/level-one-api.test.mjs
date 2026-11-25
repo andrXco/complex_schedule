@@ -50,7 +50,7 @@ test("distingue un archivo inválido de una instancia válida sin horario", asyn
   });
   assert.equal(invalid.status, 400);
   assert.match(invalid.body.error, /prioridad de la materia A/);
-  assert.equal((await post("/api/generate", { sourceJson, level: 3 })).status, 400);
+  assert.equal((await post("/api/generate", { sourceJson, level: 4 })).status, 400);
 });
 
 test("POST de guardado rechaza altas omitidas, adiciones, sustituciones y cruces", async () => {

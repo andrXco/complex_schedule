@@ -47,6 +47,14 @@
         "cuposDisponibles": 20,
         "inscritos": [],
         "sesiones": [{ "dia": "Viernes", "inicio": 780, "fin": 900 }]
+      },
+      {
+        "id": "SOF-02",
+        "materiaId": "SOF",
+        "profesorId": "P1",
+        "cuposDisponibles": 20,
+        "inscritos": [],
+        "sesiones": [{ "dia": "Viernes", "inicio": 840, "fin": 960 }]
       }
     ]
   },

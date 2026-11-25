@@ -67,7 +67,7 @@ fuera del rango.
 
 ## Aplicación y pruebas
 
-`POST /api/generate` usa el nivel 2 de forma predeterminada. Los niveles
+`POST /api/generate` ejecuta este nivel con `level: 2`. Los niveles
 anteriores siguen disponibles con `level: 0` y `level: 1`. La interfaz
 muestra los límites declarados y el total de cada resultado. Al guardar,
 el servidor reconstruye las materias y el total desde el catálogo y

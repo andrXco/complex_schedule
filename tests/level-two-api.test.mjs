@@ -16,11 +16,11 @@ async function post(path, body) {
   return { status: response.status, body: await response.json() };
 }
 
-test("la API usa el nivel 2 por defecto y filtra los totales por encima del máximo", async () => {
+test("la API admite el nivel 2 explícito y filtra los totales por encima del máximo", async () => {
   const sourceJson = structuredClone(source);
   sourceJson.estudiante.creditosMin = 7;
   sourceJson.catalogo.grupos[2].sesiones[0].inicio = "10:00";
-  const { status, body } = await post("/api/generate", { sourceJson });
+  const { status, body } = await post("/api/generate", { sourceJson, level: 2 });
   assert.equal(status, 200);
   assert.equal(body.level, 2);
   assert.equal(body.minCredits, 7);
@@ -38,14 +38,14 @@ test("la API usa el nivel 2 por defecto y filtra los totales por encima del máx
 test("la API distingue un rango inválido de un mínimo válido que no se alcanza", async () => {
   const sourceJson = structuredClone(source);
   sourceJson.estudiante.creditosMin = 8;
-  const invalid = await post("/api/generate", { sourceJson, validateOnly: true });
+  const invalid = await post("/api/generate", { sourceJson, validateOnly: true, level: 2 });
   assert.equal(invalid.status, 400);
   assert.match(invalid.body.error, /creditosMin debe ser menor o igual/);
 
   sourceJson.estudiante.creditosMax = 9;
-  const valid = await post("/api/generate", { sourceJson, validateOnly: true });
+  const valid = await post("/api/generate", { sourceJson, validateOnly: true, level: 2 });
   assert.deepEqual(valid, { status: 200, body: { valid: true } });
-  const empty = await post("/api/generate", { sourceJson });
+  const empty = await post("/api/generate", { sourceJson, level: 2 });
   assert.equal(empty.status, 200);
   assert.deepEqual(empty.body.schedules, []);
   assert.match(empty.body.reason, /8 a 9 créditos/);

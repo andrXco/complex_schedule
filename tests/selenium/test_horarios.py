@@ -123,7 +123,7 @@ class HorariosSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["2", str(count)],
+            ["3", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
@@ -143,10 +143,21 @@ class HorariosSelenium(unittest.TestCase):
         criteria = self.browser.find_element(By.CSS_SELECTOR, ".criteria").text
         self.assertIn("Mínimo de 8 créditos", criteria)
         self.assertIn("Máximo de 11 créditos", criteria)
+        self.assertIn("Almuerzo libre de 13:00 a 14:00", criteria)
         self.assertEqual(
             [badge.text for badge in self.browser.find_elements(By.CSS_SELECTOR, ".credit-pill")],
             ["11 créditos totales", "11 créditos totales"],
         )
+        self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")[0].find_element(
+            By.XPATH, './/button[normalize-space(.)="Ver calendario"]'
+        ).click()
+        self.heading("Horario 1")
+        self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".lunch-window")), 6)
+        titles = [session.get_attribute("title") for session in self.browser.find_elements(
+            By.CSS_SELECTOR, ".timetable .class-block"
+        )]
+        self.assertIn("Ingeniería de software · Grupo SOF-02 · 14:00–16:00", titles)
+        self.assertFalse(any("SOF-01" in title for title in titles))
 
     def test_informa_un_rango_valido_sin_horarios(self):
         self.enter_as(OWNER)
@@ -189,7 +200,7 @@ class HorariosSelenium(unittest.TestCase):
         two_required.write_text(json.dumps(conflict), encoding="utf-8")
         for path, reason in [
             (FIXTURES / "sin-cupos.json", "Materia alta A: sin grupos con cupos"),
-            (two_required, "materias altas (A, B)"),
+            (two_required, "No se encontró un horario"),
         ]:
             with self.subTest(filename=path.name):
                 self.open_upload()
@@ -214,7 +225,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertEqual(result["totalCredits"], 4)
         self.assertEqual(result["omitted"][0]["courseId"], "B")
         text = self.download("Descargar TXT", "Horario 1.txt")
-        self.assertIn("Nivel 2 · 4 créditos totales", text)
+        self.assertIn("Nivel 3 · 4 créditos totales", text)
         self.assertIn("Materias omitidas", text)
         self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
@@ -303,7 +314,7 @@ class HorariosSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 2", card.text)
+                self.assertIn("Nivel alcanzado: 3", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)

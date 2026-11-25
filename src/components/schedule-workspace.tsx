@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
-import type { LevelTwoResponse } from "../application/scheduling/prepare-level-two";
+import type { LevelThreeResponse } from "../application/scheduling/prepare-level-three";
+import { lunchWindow } from "../domain/scheduling/lunch-window";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
 type User = { id: string; name: string; email: string };
@@ -578,7 +579,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: LevelTwoResponse | null;
+  result: LevelThreeResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -614,6 +615,7 @@ function Generated({
                 <em>Prioridades de materias</em>
                 {result.minCredits > 0 && <em>Mínimo de {result.minCredits} créditos</em>}
                 {result.maxCredits !== null && <em>Máximo de {result.maxCredits} créditos</em>}
+                <em>{lunchLabel}</em>
               </div>
             </div>
           </section>
@@ -751,6 +753,7 @@ function Saved({
 
 const days = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 const colors = ["blue", "green", "yellow", "purple"];
+const lunchLabel = `Almuerzo libre de ${formatTime(lunchWindow.startMinute)} a ${formatTime(lunchWindow.endMinute)}`;
 
 function Calendar({ item, onBack }: { item: ScheduleView; onBack: () => void }) {
   const catalog = catalogEntries(item.source);
@@ -778,6 +781,7 @@ function Calendar({ item, onBack }: { item: ScheduleView; onBack: () => void }) 
           <p>
             {scheduleSize(item)} · Nivel alcanzado: {item.level}
           </p>
+          {item.level >= 3 && <p>{lunchLabel}</p>}
         </div>
         <div className="actions">
           <DownloadButtons item={item} fullLabel />
@@ -802,6 +806,16 @@ function Calendar({ item, onBack }: { item: ScheduleView; onBack: () => void }) 
             </div>
             {days.map((day, index) => (
               <div className="day-column timetable-day" key={day} style={{ gridColumn: index + 2 }}>
+                {item.level >= 3 && (
+                  <div
+                    className="lunch-window"
+                    aria-hidden="true"
+                    style={{
+                      top: `${((lunchWindow.startMinute - startHour * 60) / minutes) * 100}%`,
+                      height: `${((lunchWindow.endMinute - lunchWindow.startMinute) / minutes) * 100}%`,
+                    }}
+                  />
+                )}
                 {sessions
                   .filter((session) => Number(session.day) === index + 1)
                   .map((session) => {
@@ -961,7 +975,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<LevelTwoResponse | null>(null);
+  const [result, setResult] = useState<LevelThreeResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -992,7 +1006,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<LevelTwoResponse>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelThreeResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {
