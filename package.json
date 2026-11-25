@@ -9,7 +9,8 @@
     "start": "next start --hostname 0.0.0.0",
     "format": "oxfmt",
     "test:level-zero": "docker compose up -d --wait db && node --experimental-strip-types --test tests/level-zero.test.mjs tests/level-zero-input.test.mjs",
-    "test:selenium": "python -B -m unittest discover -s tests/selenium -v"
+    "test:selenium": "python -B -m unittest discover -s tests/selenium -v",
+    "test:selenium:brave": "python -B tests/selenium/test_nivel_cero.py --brave -v"
   },
   "dependencies": {
     "next": "^16.4.6",

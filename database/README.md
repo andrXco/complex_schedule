@@ -55,6 +55,18 @@ configura `SCHEDULE_BASE_URL` con su URL, por ejemplo
 Selenium Manager obtiene el controlador de Chrome.
 Si ya tienes uno instalado, indica su ruta en `CHROMEDRIVER_PATH`.
 
+Para ver los clics en una ventana de Brave, ejecuta:
+
+```powershell
+pnpm run test:selenium:brave
+```
+
+Selenium abre una ventana de prueba con su propio perfil. En Windows busca
+Brave en las carpetas habituales. Si está en otra carpeta, configura
+`BRAVE_BINARY` con la ruta de `brave.exe`. Si necesitas indicar el controlador,
+usa un ChromeDriver compatible con la versión de Chromium que muestra
+`brave://version` y configura `CHROMEDRIVER_PATH` con su ruta.
+
 Las pruebas cargan el ejemplo público y los archivos en `tests/selenium/fixtures`.
 Cubren cupos, cruces, archivos inválidos, calendario, descargas y guardado
 compartido. La prueba que guarda horarios usa datos temporales en PostgreSQL y

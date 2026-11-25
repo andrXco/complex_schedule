@@ -1,6 +1,8 @@
 import json
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 from pathlib import Path
@@ -21,6 +23,25 @@ OWNER = "Usuario de prueba 1"
 PARTICIPANT = "Usuario de prueba 2"
 
 
+def find_brave():
+    configured = os.environ.get("BRAVE_BINARY")
+    if configured:
+        if not Path(configured).is_file():
+            raise RuntimeError("BRAVE_BINARY debe apuntar al ejecutable de Brave.")
+        return configured
+
+    if os.name == "nt":
+        for key in ["ProgramFiles", "ProgramFiles(x86)", "LOCALAPPDATA"]:
+            if folder := os.environ.get(key):
+                candidate = Path(folder) / "BraveSoftware/Brave-Browser/Application/brave.exe"
+                if candidate.is_file():
+                    return str(candidate)
+
+    if executable := shutil.which("brave"):
+        return executable
+    raise RuntimeError("No se encontró Brave. Define BRAVE_BINARY con la ruta de su ejecutable.")
+
+
 def query_database(sql):
     result = subprocess.run(
         [
@@ -38,13 +59,18 @@ def query_database(sql):
 
 
 class NivelCeroSelenium(unittest.TestCase):
+    use_brave = False
+
     @classmethod
     def setUpClass(cls):
         cls.files = Path(cls.enterClassContext(tempfile.TemporaryDirectory()))
         cls.downloads = cls.files / "downloads"
         cls.downloads.mkdir()
         options = Options()
-        options.add_argument("--headless=new")
+        if cls.use_brave:
+            options.binary_location = find_brave()
+        else:
+            options.add_argument("--headless=new")
         options.add_argument("--window-size=1440,1050")
         options.add_experimental_option("prefs", {
             "download.default_directory": str(cls.downloads),
@@ -224,3 +250,10 @@ class NivelCeroSelenium(unittest.TestCase):
                 self.click("Abrir calendario", scope)
                 self.heading(title)
                 self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".class-block")), 2)
+
+
+if __name__ == "__main__":
+    if "--brave" in sys.argv:
+        sys.argv.remove("--brave")
+        NivelCeroSelenium.use_brave = True
+    unittest.main()
