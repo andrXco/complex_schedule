@@ -16,7 +16,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 
 ROOT = Path(__file__).resolve().parents[2]
 FIXTURES = Path(__file__).with_name("fixtures")
-BASE_URL = os.environ.get("SCHEDULE_BASE_URL", "http://127.0.0.1:3000")
+BASE_URL = os.environ.get("SCHEDULE_BASE_URL", "http://localhost:3000")
 OWNER = "Usuario de prueba 1"
 PARTICIPANT = "Usuario de prueba 2"
 
@@ -74,7 +74,10 @@ class NivelCeroSelenium(unittest.TestCase):
 
     def enter_as(self, name):
         locator = (By.XPATH, f'//button[.//strong[normalize-space(.)="{name}"]]')
-        self.wait.until(expected.element_to_be_clickable(locator)).click()
+        self.wait.until(
+            expected.element_to_be_clickable(locator),
+            f"No apareció el perfil {name} en {BASE_URL}. Comprueba que Next sirva la interfaz y que /api/users tenga perfiles de prueba.",
+        ).click()
         self.wait.until(expected.visibility_of_element_located((By.CSS_SELECTOR, ".home")))
 
     def open_upload(self):

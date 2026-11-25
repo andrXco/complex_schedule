@@ -34,16 +34,25 @@ Supabase Auth se integrará en una etapa posterior.
 
 ## Pruebas de navegador con Selenium
 
-Con Python 3.11 o posterior, Chrome, PostgreSQL en Docker y la app local en
-ejecución, instala las dependencias y ejecuta la suite:
+Con Python 3.11 o posterior y Chrome, inicia PostgreSQL y la app:
+
+```powershell
+docker compose up -d --wait db
+pnpm run dev
+```
+
+Espera a que Next muestre `Ready` y, desde otra terminal en el proyecto,
+instala las dependencias y ejecuta la suite:
 
 ```powershell
 python -m pip install -r tests/selenium/requirements.txt
 pnpm run test:selenium
 ```
 
-El navegador abre `http://127.0.0.1:3000`. Si la app usa otro puerto, configura
-`SCHEDULE_BASE_URL`. Selenium Manager obtiene el controlador de Chrome.
+El navegador abre `http://localhost:3000`. Si la app usa otro puerto,
+configura `SCHEDULE_BASE_URL` con su URL, por ejemplo
+`$env:SCHEDULE_BASE_URL = "http://localhost:3001"` en PowerShell.
+Selenium Manager obtiene el controlador de Chrome.
 Si ya tienes uno instalado, indica su ruta en `CHROMEDRIVER_PATH`.
 
 Las pruebas cargan el ejemplo público y los archivos en `tests/selenium/fixtures`.
