@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { pool } from "../../../src/infrastructure/postgres/pool";
-import type { GeneratedSchedule } from "../../../src/application/scheduling/prepare-level-zero";
+import {
+  validateLevelZeroSelection,
+  type GeneratedSchedule,
+} from "../../../src/application/scheduling/prepare-level-zero";
 
 export const runtime = "nodejs";
 
@@ -72,8 +75,7 @@ export async function POST(request: Request) {
     !body.title.trim() ||
     body.sourceJson === undefined ||
     body.schedule === undefined ||
-    !Number.isInteger(body.level) ||
-    Number(body.level) < 0
+    body.level !== 0
   ) {
     return NextResponse.json(
       { error: "Faltan datos válidos para guardar el horario." },
@@ -94,9 +96,16 @@ export async function POST(request: Request) {
       { status: 400 },
     );
   }
-  const savedSchedule = body.schedule as GeneratedSchedule;
-  if (!savedSchedule || !Array.isArray(savedSchedule.courses)) {
-    return NextResponse.json({ error: "La estructura del horario no es válida." }, { status: 400 });
+  const title = body.title.trim();
+  let savedSchedule: GeneratedSchedule;
+  try {
+    savedSchedule = {
+      name: title,
+      courses: validateLevelZeroSelection(body.sourceJson, body.schedule),
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "El horario no es válido.";
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 
   const client = await pool.connect();
@@ -118,7 +127,7 @@ export async function POST(request: Request) {
        RETURNING schedule_id`,
       [
         ownerUserId,
-        body.title.trim(),
+        title,
         body.level,
         JSON.stringify(savedSchedule),
         JSON.stringify(body.sourceJson),

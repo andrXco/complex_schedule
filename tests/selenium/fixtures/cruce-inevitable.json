@@ -1,0 +1,27 @@
+{
+  "catalogo": {
+    "materias": [
+      { "id": "A", "nombre": "Algoritmos", "creditos": 4 },
+      { "id": "B", "nombre": "Estadística", "creditos": 3 }
+    ],
+    "profesores": [{ "id": "P1", "nombre": "Docente de ejemplo" }],
+    "grupos": [
+      {
+        "id": "A-01", "materiaId": "A", "profesorId": "P1", "cuposDisponibles": 1,
+        "inscritos": [],
+        "sesiones": [{ "dia": "Lunes", "inicio": 480, "fin": 630 }]
+      },
+      {
+        "id": "B-01", "materiaId": "B", "profesorId": "P1", "cuposDisponibles": 2,
+        "inscritos": [],
+        "sesiones": [{ "dia": "Lunes", "inicio": 540, "fin": 600 }]
+      }
+    ]
+  },
+  "estudiante": {
+    "materias": [
+      { "materiaId": "A", "prioridad": 1, "profesoresPreferidos": [] },
+      { "materiaId": "B", "prioridad": 2, "profesoresPreferidos": [] }
+    ]
+  }
+}

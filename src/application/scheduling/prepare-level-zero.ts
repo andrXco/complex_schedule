@@ -1,6 +1,8 @@
 import {
+  findMeetingConflict,
   generateLevelZeroSchedules,
   type CourseRequirement,
+  type CourseSection,
   type ScheduledMeeting,
 } from "../../domain/scheduling/level-zero.ts";
 
@@ -66,56 +68,90 @@ export function readLevelZeroCourses(input: unknown): CourseRequirement[] {
   const requested = asArray(student.materias, "estudiante.materias debe ser una lista");
   if (requested.length === 0) throw new Error("El estudiante debe solicitar al menos una materia");
 
+  const eligibleByCourse = new Map<string, CourseSection[]>();
+  const groupIds = new Set<string>();
+  for (const [index, item] of groups.entries()) {
+    const group = asRecord(item, `El grupo ${index + 1} no es válido`);
+    const id = readId(group.id ?? group.grupoId, `El grupo ${index + 1} no tiene id`);
+    const courseId = readId(group.materiaId ?? group.courseId, `El grupo ${id} no tiene materia`);
+    if (groupIds.has(id)) throw new Error(`El grupo ${id} está repetido en el catálogo.`);
+    groupIds.add(id);
+
+    const seats = group.cuposDisponibles;
+    if (typeof seats !== "number" || !Number.isInteger(seats) || seats < 0) {
+      throw new Error(`cuposDisponibles del grupo ${id} debe ser un entero mayor o igual a cero.`);
+    }
+    const sessions = asArray(group.sesiones ?? group.meetings, `El grupo ${id} no tiene sesiones`);
+    if (sessions.length === 0) throw new Error(`El grupo ${id} debe tener al menos una sesión.`);
+    const meetings = sessions.map((session, index) => readMeeting(session, id, index));
+
+    if (seats === 0) continue;
+    const sections = eligibleByCourse.get(courseId) ?? [];
+    sections.push({ id, meetings });
+    eligibleByCourse.set(courseId, sections);
+  }
+
+  const requestedIds = new Set<string>();
   return requested.map((item, index) => {
     const requirement = asRecord(item, `estudiante.materias[${index}] no es válido`);
     const courseId = readId(
       requirement.materiaId ?? requirement.id,
       `La materia ${index + 1} no tiene id`,
     );
-    const matchingGroups = groups.filter((group) => {
-      const record = asRecord(group, "Hay un grupo inválido en el catálogo");
-      return String(record.materiaId ?? record.courseId ?? "") === courseId;
-    });
-
-    return {
-      courseId,
-      sections: matchingGroups.map((group, groupIndex) => {
-        const record = asRecord(group, `El grupo ${groupIndex + 1} no es válido`);
-        const id = readId(record.id ?? record.grupoId, `Un grupo de ${courseId} no tiene id`);
-        const sessions = asArray(
-          record.sesiones ?? record.meetings,
-          `El grupo ${id} no tiene sesiones`,
-        );
-        return {
-          id,
-          meetings: sessions.map((rawSession, sessionIndex) => {
-            const meeting = asRecord(
-              rawSession,
-              `La sesión ${sessionIndex + 1} del grupo ${id} no es válida`,
-            );
-            const session = {
-              day: normalizeDay(
-                meeting.dia ?? meeting.day ?? meeting.diaSemana ?? meeting.dayOfWeek,
-              ),
-              startMinute: normalizeTime(
-                meeting.startMinute ?? meeting.horaInicio ?? meeting.inicio,
-                "inicio",
-              ),
-              endMinute: normalizeTime(meeting.endMinute ?? meeting.horaFin ?? meeting.fin, "fin"),
-            };
-            if (
-              session.startMinute < 0 ||
-              session.endMinute > 1440 ||
-              session.startMinute >= session.endMinute
-            ) {
-              throw new Error(`La sesión del grupo ${id} debe tener un intervalo válido.`);
-            }
-            return session;
-          }),
-        };
-      }),
-    };
+    if (requestedIds.has(courseId)) throw new Error(`La materia ${courseId} está repetida.`);
+    requestedIds.add(courseId);
+    return { courseId, sections: eligibleByCourse.get(courseId) ?? [] };
   });
+}
+
+/** Rebuilds the chosen assignment using the source catalog's seats and sessions. */
+export function validateLevelZeroSelection(
+  input: unknown,
+  selection: unknown,
+): GeneratedSchedule["courses"] {
+  const courses = readLevelZeroCourses(input);
+  const schedule = asRecord(selection, "La estructura del horario no es válida.");
+  const selected = asArray(schedule.courses, "El horario debe incluir los grupos elegidos.");
+  if (selected.length !== courses.length) {
+    throw new Error("El horario debe incluir un grupo por cada materia solicitada.");
+  }
+
+  const sectionByCourse = new Map<string, string>();
+  for (const item of selected) {
+    const choice = asRecord(item, "Hay un grupo inválido en el horario.");
+    const courseId = readId(choice.courseId, "Una materia seleccionada no tiene id.");
+    const sectionId = readId(choice.sectionId, "Un grupo seleccionado no tiene id.");
+    if (sectionByCourse.has(courseId)) throw new Error(`La materia ${courseId} está repetida.`);
+    sectionByCourse.set(courseId, sectionId);
+  }
+
+  const assignments = courses.map(({ courseId, sections }) => {
+    const id = sectionByCourse.get(courseId);
+    if (!id) throw new Error(`Falta el grupo de la materia ${courseId}.`);
+    const section = sections.find((candidate) => candidate.id === id);
+    if (!section)
+      throw new Error(`El grupo ${id} no pertenece a ${courseId} o no tiene cupos disponibles.`);
+    return { courseId, sectionId: section.id, meetings: section.meetings };
+  });
+
+  if (findMeetingConflict(assignments.flatMap(({ meetings }) => meetings))) {
+    throw new Error("Las sesiones del horario se cruzan.");
+  }
+  return assignments;
+}
+
+function readMeeting(value: unknown, groupId: string, index: number): ScheduledMeeting {
+  const meeting = asRecord(value, `La sesión ${index + 1} del grupo ${groupId} no es válida`);
+  const day = normalizeDay(meeting.dia ?? meeting.day ?? meeting.diaSemana ?? meeting.dayOfWeek);
+  const startMinute = normalizeTime(
+    meeting.startMinute ?? meeting.horaInicio ?? meeting.inicio,
+    "inicio",
+  );
+  const endMinute = normalizeTime(meeting.endMinute ?? meeting.horaFin ?? meeting.fin, "fin");
+  if (startMinute < 0 || endMinute > 1440 || startMinute >= endMinute) {
+    throw new Error(`La sesión del grupo ${groupId} debe tener un intervalo válido.`);
+  }
+  return { day, startMinute, endMinute };
 }
 
 function asRecord(value: unknown, message: string): JsonRecord {
@@ -139,9 +175,10 @@ function normalizeDay(value: unknown): string {
   const key = String(value ?? "")
     .trim()
     .toLocaleLowerCase("es");
-  const day = dayAliases[key];
-  if (!day) throw new Error(`Día inválido: ${String(value)}`);
-  return day;
+  if (!Object.prototype.hasOwnProperty.call(dayAliases, key)) {
+    throw new Error(`Día inválido: ${String(value)}`);
+  }
+  return dayAliases[key];
 }
 
 function normalizeTime(value: unknown, label: string): number {

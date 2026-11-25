@@ -609,14 +609,17 @@ function Generated({
               </strong>
             </div>
             <div className="criteria">
-              <span>Restricción activa</span>
+              <span>Restricciones activas</span>
               <div>
                 <em>Sesiones sin cruces</em>
+                <em>Grupos con cupo</em>
               </div>
             </div>
           </section>
           {result.schedules.length === 0 && (
-            <p className="footnote">El nivel 0 no encontró una combinación sin cruces.</p>
+            <p className="footnote">
+              No se encontró una combinación sin cruces y con cupo en todos los grupos.
+            </p>
           )}
           <div className="schedule-list">
             {result.schedules.map((schedule, index) => {

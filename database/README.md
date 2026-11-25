@@ -31,3 +31,43 @@ con `docker compose up -d --wait db` y ejecuta `pnpm dev`. Las rutas
 `/api/users` y `/api/schedules` conectan Next.js con PostgreSQL;
 `/api/generate` ejecuta el algoritmo de nivel cero sobre el JSON cargado.
 Supabase Auth se integrará en una etapa posterior.
+
+## Pruebas de navegador con Selenium
+
+Con Python 3.11 o posterior y Chrome, inicia PostgreSQL y la app:
+
+```powershell
+docker compose up -d --wait db
+pnpm run dev
+```
+
+Espera a que Next muestre `Ready` y, desde otra terminal en el proyecto,
+instala las dependencias y ejecuta la suite:
+
+```powershell
+python -m pip install -r tests/selenium/requirements.txt
+pnpm run test:selenium
+```
+
+El navegador abre `http://localhost:3000`. Si la app usa otro puerto,
+configura `SCHEDULE_BASE_URL` con su URL, por ejemplo
+`$env:SCHEDULE_BASE_URL = "http://localhost:3001"` en PowerShell.
+Selenium Manager obtiene el controlador de Chrome.
+Si ya tienes uno instalado, indica su ruta en `CHROMEDRIVER_PATH`.
+
+Para ver los clics en una ventana de Brave, ejecuta:
+
+```powershell
+pnpm run test:selenium:brave
+```
+
+Selenium abre una ventana de prueba con su propio perfil. En Windows busca
+Brave en las carpetas habituales. Si está en otra carpeta, configura
+`BRAVE_BINARY` con la ruta de `brave.exe`. Si necesitas indicar el controlador,
+usa un ChromeDriver compatible con la versión de Chromium que muestra
+`brave://version` y configura `CHROMEDRIVER_PATH` con su ruta.
+
+Las pruebas cargan el ejemplo público y los archivos en `tests/selenium/fixtures`.
+Cubren cupos, cruces, archivos inválidos, calendario, descargas y guardado
+compartido. La prueba que guarda horarios usa datos temporales en PostgreSQL y
+los retira al terminar.

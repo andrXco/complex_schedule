@@ -1,0 +1,14 @@
+{
+  "catalogo": {
+    "materias": [{ "id": "A", "nombre": "Algoritmos", "creditos": 4 }],
+    "profesores": [{ "id": "P1", "nombre": "Docente de ejemplo" }],
+    "grupos": [
+      {
+        "id": "A-01", "materiaId": "A", "profesorId": "P1", "cuposDisponibles": -1,
+        "inscritos": [],
+        "sesiones": [{ "dia": "Lunes", "inicio": "08:00", "fin": "09:00" }]
+      }
+    ]
+  },
+  "estudiante": { "materias": [{ "materiaId": "A", "prioridad": 1, "profesoresPreferidos": [] }] }
+}

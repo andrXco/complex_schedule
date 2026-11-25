@@ -3,9 +3,8 @@
 ## Objetivo
 
 Generar asignaciones que el estudiante pueda elegir, seleccionando una sección
-por curso y descartando cualquier combinación con dos sesiones que se crucen
-el mismo día. Esta condición se aplica a todas las opciones que devuelve el
-algoritmo.
+por curso. Cada grupo elegido debe tener al menos un cupo disponible y sus
+sesiones no pueden cruzarse el mismo día con las demás.
 
 Una sesión se representa con un día canónico y minutos desde la medianoche. Los
 intervalos son semiabiertos: una sesión que termina a las 10:00 puede ir seguida
@@ -22,7 +21,9 @@ por una arista.
 
 Una sección cuyas propias sesiones se cruzan se excluye antes de construir el
 grafo. La capa de aplicación adapta el JSON del proyecto (`catalogo.grupos` y
-`estudiante.materias`) a este modelo. Acepta días en español o numéricos y
+`estudiante.materias`) a este modelo. Comprueba que `cuposDisponibles` sea un
+entero no negativo y pasa al grafo solo los grupos con cupos positivos.
+Acepta días en español o numéricos y
 horas en minutos o como texto `HH:mm`; el dominio recibe días canónicos y
 minutos enteros.
 
@@ -111,7 +112,9 @@ volumen: opciones sin cruces (4 horarios), conflicto inevitable (0 horarios) y
 cruce anidado con sesiones contiguas (6 horarios). La prueba consulta esos
 registros y compara el resultado del generador con el conteo esperado; también
 comprueba que ningún horario devuelto tenga traslapes. La ruta de Next
-`/api/generate` adapta el JSON real y llama al mismo generador.
+`/api/generate` adapta el JSON real y llama al mismo generador. Las pruebas del
+JSON también cubren grupos llenos, cupos inválidos y el caso en que una materia
+se queda sin opciones.
 
 Ejecuta `pnpm test:level-zero` con Docker Desktop disponible. El servicio y los
 datos quedan en el volumen local `postgres_data`.
@@ -119,7 +122,10 @@ datos quedan en el volumen local `postgres_data`.
 ## Persistencia local y participantes
 
 Las rutas `/api/users` y `/api/schedules` consultan PostgreSQL en el servidor.
-Al guardar, una transacción inserta el resultado JSON, el JSON de origen, el
+Antes de guardar, el servidor reconstruye las sesiones desde el catálogo
+adjunto y comprueba que haya un grupo con cupo por materia y que no haya cruces.
+Los cupos corresponden al momento del que proviene ese catálogo.
+Una transacción inserta el resultado JSON, el JSON de origen, el
 nivel y el propietario junto con los participantes seleccionados. Los usuarios
 de esta etapa son datos de desarrollo; el selector no ofrece autenticación y no
 debe exponerse como tal. Supabase Auth queda para una etapa posterior.
