@@ -123,7 +123,7 @@ class HorariosSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["6", str(count)],
+            ["7", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
@@ -257,7 +257,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertEqual(result["totalCredits"], 4)
         self.assertEqual(result["omitted"][0]["courseId"], "B")
         text = self.download("Descargar TXT", "Horario 1.txt")
-        self.assertIn("Nivel 6 · 4 créditos totales", text)
+        self.assertIn("Nivel 7 · 4 créditos totales", text)
         self.assertIn("Materias omitidas", text)
         self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
@@ -346,7 +346,7 @@ class HorariosSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 6", card.text)
+                self.assertIn("Nivel alcanzado: 7", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)
@@ -357,6 +357,17 @@ class HorariosSelenium(unittest.TestCase):
                     "Estadística · Grupo M-01 · 09:00–10:00",
                 ])
                 self.assertIn("Bases de datos", self.browser.find_element(By.CSS_SELECTOR, ".omitted").text)
+
+    def test_ordena_por_profesores_y_muestra_el_docente(self):
+        self.enter_as(OWNER)
+        self.open_upload()
+        self.upload(FIXTURES / "profesores.json")
+        self.wait_valid()
+        self.generate(3)
+        self.assertIn("Profesores preferidos", self.browser.find_element(By.CSS_SELECTOR, ".criteria").text)
+        self.click("Ver calendario", '(//main//article[contains(@class, "schedule-card")])[1]')
+        self.heading("Horario 1")
+        self.assertIn("Ana Pérez", self.browser.find_element(By.CSS_SELECTOR, ".class-block").text)
 
 
 if __name__ == "__main__":

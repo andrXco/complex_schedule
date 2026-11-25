@@ -9,9 +9,15 @@ type JsonRecord = Record<string, unknown>;
 
 export type GeneratedSchedule = {
   name: string;
-  courses: { courseId: string; sectionId: string; meetings: ScheduledMeeting[] }[];
+  courses: {
+    courseId: string;
+    sectionId: string;
+    meetings: ScheduledMeeting[];
+    professor?: { id: string; name: string };
+  }[];
   omitted?: { courseId: string; reasons: string[] }[];
   totalCredits?: number;
+  professorPreferenceScore?: number;
 };
 
 const dayAliases: Record<string, string> = {
@@ -81,7 +87,11 @@ export function readScheduleInput(input: unknown) {
     );
     if (requestedIds.has(courseId)) throw new Error(`La materia ${courseId} está repetida.`);
     requestedIds.add(courseId);
-    return { courseId, priority: requirement.prioridad };
+    return {
+      courseId,
+      priority: requirement.prioridad,
+      preferredProfessors: requirement.profesoresPreferidos,
+    };
   });
   const courses = requests.map(({ courseId }) => ({
     courseId,

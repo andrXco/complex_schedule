@@ -26,12 +26,18 @@ type Evaluation =
 export type PrioritizedResult = {
   schedules: (Extract<Evaluation, { valid: true }> & {
     assignments: Map<string, CourseSection>;
+    rank?: number;
   })[];
   truncated: boolean;
   unavailableHigh: string[];
 };
 
 type SectionGraph = ReturnType<typeof buildSectionConflictGraph>;
+
+export type SectionSearchOptions = {
+  canSelectSection?: (section: CourseSection) => boolean;
+  rankSection?: (section: CourseSection) => number;
+};
 
 export function generateLevelOneSchedules(
   courses: readonly PrioritizedCourse[],
@@ -56,12 +62,12 @@ export function searchPrioritizedSchedules(
     maxCredits,
     maxSchedules,
     canSelectSection,
+    rankSection,
     acceptsMeetings,
-  }: {
+  }: SectionSearchOptions & {
     minCredits?: number;
     maxCredits: number;
     maxSchedules: number;
-    canSelectSection?: (section: CourseSection) => boolean;
     acceptsMeetings?: (meetings: readonly ScheduledMeeting[]) => boolean;
   },
 ): PrioritizedResult {
@@ -81,6 +87,7 @@ export function searchPrioritizedSchedules(
   if (unavailableHigh.length) return result;
   const selectable =
     canSelectSection && graph.nodes.map(({ section }) => canSelectSection(section));
+  const ranks = rankSection && graph.nodes.map(({ section }) => rankSection(section));
   if (
     selectable &&
     required.some((course) => !graph.nodesByCourse[course].some((node) => selectable[node]))
@@ -107,7 +114,10 @@ export function searchPrioritizedSchedules(
   }
   const selected = new Map<number, number>();
 
-  function search(position: number, totalCredits: number): void {
+  function search(position: number, totalCredits: number, rank: number): void {
+    const last = result.schedules[result.schedules.length - 1];
+    // Positions are nonnegative. After finding an extra valid schedule, a later tie cannot improve the output.
+    if (ranks && result.truncated && rank >= (last?.rank ?? Infinity)) return;
     // When evaluating level 2, even selecting every remaining course must leave a chance of reaching the range.
     if (
       minCredits !== undefined &&
@@ -127,14 +137,23 @@ export function searchPrioritizedSchedules(
         return;
       if (result.schedules.length === maxSchedules) {
         result.truncated = true;
-        return;
+        if (!ranks || rank >= (last.rank ?? Infinity)) return;
       }
       const assignments = new Map<string, CourseSection>();
       courses.forEach(({ courseId }, index) => {
         const node = selected.get(index);
         if (node !== undefined) assignments.set(courseId, graph.nodes[node].section);
       });
-      result.schedules.push({ ...evaluation, assignments });
+      const entry = { ...evaluation, assignments };
+      if (ranks) {
+        const position = result.schedules.findIndex((item) => (item.rank ?? Infinity) > rank);
+        const ranked = { ...entry, rank };
+        if (position === -1) result.schedules.push(ranked);
+        else result.schedules.splice(position, 0, ranked);
+        if (result.schedules.length > maxSchedules) result.schedules.pop();
+      } else {
+        result.schedules.push(entry);
+      }
       return;
     }
 
@@ -150,14 +169,14 @@ export function searchPrioritizedSchedules(
       // Later levels restrict selection after the level 1 addability check.
       if (selectable?.[node] === false) continue;
       selected.set(course, node);
-      search(position + 1, totalCredits + courses[course].credits);
+      search(position + 1, totalCredits + courses[course].credits, rank + (ranks?.[node] ?? 0));
       selected.delete(course);
-      if (result.truncated) return;
+      if (result.truncated && !ranks) return;
     }
-    if (position >= required.length && !alwaysAddable) search(position + 1, totalCredits);
+    if (position >= required.length && !alwaysAddable) search(position + 1, totalCredits, rank);
   }
 
-  search(0, 0);
+  search(0, 0, 0);
   return result;
 }
 

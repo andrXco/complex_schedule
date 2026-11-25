@@ -65,7 +65,9 @@ export function readLevelOneInput(input: unknown) {
   return {
     courses: prioritizedCourses,
     maxCredits,
+    catalog,
     student,
+    requests,
     coursesWithGroups,
   };
 }

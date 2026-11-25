@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
-import type { LevelSixResponse } from "../application/scheduling/prepare-level-six";
+import type { LevelSevenResponse } from "../application/scheduling/prepare-level-seven";
 import { lunchWindow } from "../domain/scheduling/lunch-window";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
@@ -579,7 +579,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: LevelSixResponse | null;
+  result: LevelSevenResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -630,6 +630,7 @@ function Generated({
                 {result.daysOff.length > 0 && (
                   <em>Días libres · {result.daysOff.map((day) => days[Number(day) - 1]).join(", ")}</em>
                 )}
+                {result.professorPreferences && <em>Profesores preferidos</em>}
               </div>
             </div>
           </section>
@@ -849,6 +850,7 @@ function Calendar({ item, onBack }: { item: ScheduleView; onBack: () => void }) 
                         <strong>{name}</strong>
                         <span>
                           Grupo {session.course.sectionId} · {interval}
+                          {session.course.professor && ` · ${session.course.professor.name}`}
                         </span>
                       </div>
                     );
@@ -921,6 +923,7 @@ function DownloadButtons({ item, fullLabel = false }: { item: ScheduleView; full
     const catalog = catalogEntries(item.source);
     const text = item.schedule.courses.flatMap((course) => [
       `${catalog.get(course.courseId)?.name ?? course.courseId} · Grupo ${course.sectionId}`,
+      ...(course.professor ? [`  Profesor ${course.professor.name}`] : []),
       ...course.meetings.map(
         (session) =>
           `  ${days[Number(session.day) - 1]} ${formatTime(session.startMinute)}–${formatTime(session.endMinute)}`,
@@ -989,7 +992,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<LevelSixResponse | null>(null);
+  const [result, setResult] = useState<LevelSevenResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -1020,7 +1023,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<LevelSixResponse>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelSevenResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {
