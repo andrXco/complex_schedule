@@ -1,6 +1,6 @@
 import { generateLevelFourSchedules } from "./gaps.ts";
 import type { PrioritizedCourse } from "./level-one.ts";
-import type { ScheduledMeeting } from "./section-conflicts.ts";
+import type { CourseSection, ScheduledMeeting } from "./section-conflicts.ts";
 
 export type PreferredWindow = Pick<ScheduledMeeting, "startMinute" | "endMinute">;
 
@@ -17,6 +17,7 @@ export function generateLevelFiveSchedules(
     preferredWindow: PreferredWindow | null;
   },
   maxSchedules = 100,
+  additionalSectionCheck?: (section: CourseSection) => boolean,
 ) {
   const { preferredWindow } = constraints;
   return generateLevelFourSchedules(
@@ -24,8 +25,9 @@ export function generateLevelFiveSchedules(
     constraints,
     maxSchedules,
     preferredWindow
-      ? ({ meetings }) =>
-          meetings.every((meeting) => isWithinPreferredWindow(meeting, preferredWindow))
-      : undefined,
+      ? (section) =>
+          section.meetings.every((meeting) => isWithinPreferredWindow(meeting, preferredWindow)) &&
+          (additionalSectionCheck?.(section) ?? true)
+      : additionalSectionCheck,
   );
 }

@@ -4,6 +4,7 @@ import { validateLevelOneSelection } from "../../../src/application/scheduling/p
 import { validateLevelThreeSelection } from "../../../src/application/scheduling/prepare-level-three";
 import { validateLevelFourSelection } from "../../../src/application/scheduling/prepare-level-four";
 import { validateLevelFiveSelection } from "../../../src/application/scheduling/prepare-level-five";
+import { validateLevelSixSelection } from "../../../src/application/scheduling/prepare-level-six";
 import { validateLevelTwoSelection } from "../../../src/application/scheduling/prepare-level-two";
 import {
   validateLevelZeroSelection,
@@ -21,6 +22,7 @@ const validators = {
   3: validateLevelThreeSelection,
   4: validateLevelFourSelection,
   5: validateLevelFiveSelection,
+  6: validateLevelSixSelection,
 };
 
 export async function GET(request: Request) {
@@ -91,12 +93,8 @@ export async function POST(request: Request) {
     !body.title.trim() ||
     body.sourceJson === undefined ||
     body.schedule === undefined ||
-    (body.level !== 0 &&
-      body.level !== 1 &&
-      body.level !== 2 &&
-      body.level !== 3 &&
-      body.level !== 4 &&
-      body.level !== 5)
+    typeof body.level !== "number" ||
+    !Object.prototype.hasOwnProperty.call(validators, body.level)
   ) {
     return NextResponse.json(
       { error: "Faltan datos válidos para guardar el horario." },
@@ -122,7 +120,7 @@ export async function POST(request: Request) {
   try {
     savedSchedule = {
       name: title,
-      ...validators[body.level](body.sourceJson, body.schedule),
+      ...validators[body.level as keyof typeof validators](body.sourceJson, body.schedule),
     };
   } catch (error) {
     const message = error instanceof Error ? error.message : "El horario no es válido.";

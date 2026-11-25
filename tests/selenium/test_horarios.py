@@ -123,7 +123,7 @@ class HorariosSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["5", str(count)],
+            ["6", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
@@ -144,6 +144,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertIn("Mínimo de 8 créditos", criteria)
         self.assertIn("Máximo de 11 créditos", criteria)
         self.assertIn("Almuerzo libre de 13:00 a 14:00", criteria)
+        self.assertIn("Días libres · Sábado", criteria)
         self.assertEqual(
             [badge.text for badge in self.browser.find_elements(By.CSS_SELECTOR, ".credit-pill")],
             ["11 créditos totales", "11 créditos totales"],
@@ -256,7 +257,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertEqual(result["totalCredits"], 4)
         self.assertEqual(result["omitted"][0]["courseId"], "B")
         text = self.download("Descargar TXT", "Horario 1.txt")
-        self.assertIn("Nivel 5 · 4 créditos totales", text)
+        self.assertIn("Nivel 6 · 4 créditos totales", text)
         self.assertIn("Materias omitidas", text)
         self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
@@ -345,7 +346,7 @@ class HorariosSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 5", card.text)
+                self.assertIn("Nivel alcanzado: 6", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)

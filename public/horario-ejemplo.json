@@ -63,6 +63,7 @@
     "creditosMax": 11,
     "huecos": { "tipo": "ninguno" },
     "franja": { "inicio": "07:00", "fin": "16:00" },
+    "diasLibres": ["sábado"],
     "materias": [
       { "materiaId": "ALG", "prioridad": 1, "profesoresPreferidos": [] },
       { "materiaId": "EST", "prioridad": 2, "profesoresPreferidos": [] },
