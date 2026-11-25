@@ -17,7 +17,7 @@ async function post(path, body) {
 }
 
 test("la API ordena por profesores preferidos y rechaza guardar un docente ajeno a la lista", async () => {
-  const generated = await post("/api/generate", { sourceJson });
+  const generated = await post("/api/generate", { sourceJson, level: 7 });
   assert.equal(generated.status, 200);
   assert.equal(generated.body.level, 7);
   assert.deepEqual(

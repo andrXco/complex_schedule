@@ -37,6 +37,7 @@ type SectionGraph = ReturnType<typeof buildSectionConflictGraph>;
 export type SectionSearchOptions = {
   canSelectSection?: (section: CourseSection) => boolean;
   rankSection?: (section: CourseSection) => number;
+  acceptsSections?: (sections: readonly CourseSection[]) => boolean;
 };
 
 export function generateLevelOneSchedules(
@@ -64,6 +65,7 @@ export function searchPrioritizedSchedules(
     canSelectSection,
     rankSection,
     acceptsMeetings,
+    acceptsSections,
   }: SectionSearchOptions & {
     minCredits?: number;
     maxCredits: number;
@@ -128,13 +130,12 @@ export function searchPrioritizedSchedules(
     if (position === order.length) {
       const evaluation = evaluate(graph, courses, selected, totalCredits, maxCredits);
       if (!evaluation.valid) return;
-      if (
-        acceptsMeetings &&
-        !acceptsMeetings(
-          [...selected.values()].flatMap((node) => graph.nodes[node].section.meetings),
-        )
-      )
-        return;
+      if (acceptsSections || acceptsMeetings) {
+        const sections = Array.from(selected.values(), (node) => graph.nodes[node].section);
+        if (acceptsSections && !acceptsSections(sections)) return;
+        if (acceptsMeetings && !acceptsMeetings(sections.flatMap(({ meetings }) => meetings)))
+          return;
+      }
       if (result.schedules.length === maxSchedules) {
         result.truncated = true;
         if (!ranks || rank >= (last.rank ?? Infinity)) return;

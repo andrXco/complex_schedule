@@ -6,6 +6,7 @@ import { validateLevelFourSelection } from "../../../src/application/scheduling/
 import { validateLevelFiveSelection } from "../../../src/application/scheduling/prepare-level-five";
 import { validateLevelSixSelection } from "../../../src/application/scheduling/prepare-level-six";
 import { validateLevelSevenSelection } from "../../../src/application/scheduling/prepare-level-seven";
+import { validateLevelEightSelection } from "../../../src/application/scheduling/prepare-level-eight";
 import { validateLevelTwoSelection } from "../../../src/application/scheduling/prepare-level-two";
 import {
   validateLevelZeroSelection,
@@ -25,6 +26,7 @@ const validators = {
   5: validateLevelFiveSelection,
   6: validateLevelSixSelection,
   7: validateLevelSevenSelection,
+  8: validateLevelEightSelection,
 };
 
 export async function GET(request: Request) {

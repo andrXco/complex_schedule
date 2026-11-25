@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
-import type { LevelSevenResponse } from "../application/scheduling/prepare-level-seven";
+import type { LevelEightResponse } from "../application/scheduling/prepare-level-eight";
 import { lunchWindow } from "../domain/scheduling/lunch-window";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
@@ -579,7 +579,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: LevelSevenResponse | null;
+  result: LevelEightResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -631,6 +631,9 @@ function Generated({
                   <em>Días libres · {result.daysOff.map((day) => days[Number(day) - 1]).join(", ")}</em>
                 )}
                 {result.professorPreferences && <em>Profesores preferidos</em>}
+                {result.minFriendMatches > 0 && (
+                  <em>Mínimo de {result.minFriendMatches} coincidencias con amigos</em>
+                )}
               </div>
             </div>
           </section>
@@ -643,7 +646,10 @@ function Generated({
                 <article className="schedule-card" key={schedule.name}>
                   <div className="schedule-top">
                     <h2>{schedule.name}</h2>
-                    <span className="credit-pill">{scheduleSize(item)}</span>
+                    <span className="credit-pill">
+                      {scheduleSize(item)}
+                      {result.minFriendMatches > 0 && ` · ${friendMatchLabel(schedule.friendMatches ?? 0)}`}
+                    </span>
                   </div>
                   <OmittedCourses item={item} />
                   <div className="actions">
@@ -795,6 +801,7 @@ function Calendar({ item, onBack }: { item: ScheduleView; onBack: () => void }) 
           <h1>{item.title}</h1>
           <p>
             {scheduleSize(item)} · Nivel alcanzado: {item.level}
+            {!!item.schedule.friendMatches && ` · ${friendMatchLabel(item.schedule.friendMatches)}`}
           </p>
           {item.level >= 3 && <p>{lunchLabel}</p>}
         </div>
@@ -918,6 +925,10 @@ function formatTime(minutes: number) {
   return `${hour.toString().padStart(2, "0")}:${(minutes % 60).toString().padStart(2, "0")}`;
 }
 
+function friendMatchLabel(count: number) {
+  return count === 1 ? "1 coincidencia con amigos" : `${count} coincidencias con amigos`;
+}
+
 function DownloadButtons({ item, fullLabel = false }: { item: ScheduleView; fullLabel?: boolean }) {
   function download(extension: "json" | "txt") {
     const catalog = catalogEntries(item.source);
@@ -931,6 +942,9 @@ function DownloadButtons({ item, fullLabel = false }: { item: ScheduleView; full
     ]);
     const omissions = omissionLabels(item);
     const summary = item.level >= 1 ? [`Nivel ${item.level} · ${scheduleSize(item)}`] : [];
+    if (item.schedule.friendMatches !== undefined) {
+      summary.push(friendMatchLabel(item.schedule.friendMatches));
+    }
     const omitted = omissions.length
       ? ["", "Materias omitidas", ...omissions.map(({ label }) => `  ${label}`)]
       : [];
@@ -992,7 +1006,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<LevelSevenResponse | null>(null);
+  const [result, setResult] = useState<LevelEightResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -1023,7 +1037,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<LevelSevenResponse>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelEightResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {

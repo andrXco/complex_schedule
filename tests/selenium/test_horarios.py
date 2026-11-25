@@ -123,7 +123,7 @@ class HorariosSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["7", str(count)],
+            ["8", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
@@ -147,7 +147,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertIn("Días libres · Sábado", criteria)
         self.assertEqual(
             [badge.text for badge in self.browser.find_elements(By.CSS_SELECTOR, ".credit-pill")],
-            ["11 créditos totales", "11 créditos totales"],
+            ["11 créditos totales · 3 coincidencias con amigos"] * 2,
         )
         self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")[0].find_element(
             By.XPATH, './/button[normalize-space(.)="Ver calendario"]'
@@ -257,7 +257,7 @@ class HorariosSelenium(unittest.TestCase):
         self.assertEqual(result["totalCredits"], 4)
         self.assertEqual(result["omitted"][0]["courseId"], "B")
         text = self.download("Descargar TXT", "Horario 1.txt")
-        self.assertIn("Nivel 7 · 4 créditos totales", text)
+        self.assertIn("Nivel 8 · 4 créditos totales", text)
         self.assertIn("Materias omitidas", text)
         self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
@@ -346,7 +346,7 @@ class HorariosSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 7", card.text)
+                self.assertIn("Nivel alcanzado: 8", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)
@@ -368,6 +368,37 @@ class HorariosSelenium(unittest.TestCase):
         self.click("Ver calendario", '(//main//article[contains(@class, "schedule-card")])[1]')
         self.heading("Horario 1")
         self.assertIn("Ana Pérez", self.browser.find_element(By.CSS_SELECTOR, ".class-block").text)
+
+    def test_guarda_y_exporta_el_total_de_coincidencias(self):
+        title = f"Coincidencias Selenium {uuid4().hex}"
+        self.addCleanup(
+            query_database,
+            f"DELETE FROM user_schedule WHERE title = '{title}' AND created_by_user_id = 'demo-user-1';",
+        )
+        self.enter_as(OWNER)
+        self.open_upload()
+        self.upload(FIXTURES / "amigos.json")
+        self.wait_valid()
+        self.browser.find_element(
+            By.XPATH, '//label[span[contains(., "Nombre para guardar")]]//input'
+        ).send_keys(title)
+        self.generate(1)
+        self.assertIn("Mínimo de 3 coincidencias con amigos", self.browser.find_element(
+            By.CSS_SELECTOR, ".criteria"
+        ).text)
+        self.click("Guardar")
+        self.wait.until(expected.visibility_of_element_located(
+            (By.XPATH, '//main//button[normalize-space(.)="Guardado"]')
+        ))
+        self.assertEqual(query_database(
+            f"SELECT algorithm_level || ':' || (generated_schedule->>'friendMatches') "
+            f"FROM user_schedule WHERE title = '{title}';"
+        ), "8:3")
+        self.click("Ver calendario")
+        self.heading("Horario 1")
+        downloaded = json.loads(self.download("Descargar JSON", "Horario 1.json"))
+        self.assertEqual(downloaded["friendMatches"], 3)
+        self.assertIn("3 coincidencias con amigos", self.download("Descargar TXT", "Horario 1.txt"))
 
 
 if __name__ == "__main__":
