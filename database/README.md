@@ -31,3 +31,22 @@ con `docker compose up -d --wait db` y ejecuta `pnpm dev`. Las rutas
 `/api/users` y `/api/schedules` conectan Next.js con PostgreSQL;
 `/api/generate` ejecuta el algoritmo de nivel cero sobre el JSON cargado.
 Supabase Auth se integrará en una etapa posterior.
+
+## Pruebas de navegador con Selenium
+
+Con Python 3.11 o posterior, Chrome, PostgreSQL en Docker y la app local en
+ejecución, instala las dependencias y ejecuta la suite:
+
+```powershell
+python -m pip install -r tests/selenium/requirements.txt
+pnpm run test:selenium
+```
+
+El navegador abre `http://127.0.0.1:3000`. Si la app usa otro puerto, configura
+`SCHEDULE_BASE_URL`. Selenium Manager obtiene el controlador de Chrome.
+Si ya tienes uno instalado, indica su ruta en `CHROMEDRIVER_PATH`.
+
+Las pruebas cargan el ejemplo público y los archivos en `tests/selenium/fixtures`.
+Cubren cupos, cruces, archivos inválidos, calendario, descargas y guardado
+compartido. La prueba que guarda horarios usa datos temporales en PostgreSQL y
+los retira al terminar.

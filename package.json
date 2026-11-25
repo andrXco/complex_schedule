@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start --hostname 0.0.0.0",
     "format": "oxfmt",
-    "test:level-zero": "docker compose up -d --wait db && node --experimental-strip-types --test tests/level-zero.test.mjs tests/level-zero-input.test.mjs"
+    "test:level-zero": "docker compose up -d --wait db && node --experimental-strip-types --test tests/level-zero.test.mjs tests/level-zero-input.test.mjs",
+    "test:selenium": "python -B -m unittest discover -s tests/selenium -v"
   },
   "dependencies": {
     "next": "^16.4.6",
