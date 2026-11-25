@@ -16,8 +16,8 @@ async function post(path, body) {
   return { status: response.status, body: await response.json() };
 }
 
-test("la API aplica la franja de nivel 5 por defecto y admite nivel 4 explícito", async () => {
-  const generated = await post("/api/generate", { sourceJson });
+test("la API admite el nivel 5 explícito y conserva el nivel 4", async () => {
+  const generated = await post("/api/generate", { sourceJson, level: 5 });
   assert.equal(generated.status, 200);
   assert.equal(generated.body.level, 5);
   assert.deepEqual(generated.body.preferredWindow, { startMinute: 480, endMinute: 960 });

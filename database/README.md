@@ -29,7 +29,7 @@ docker compose exec -T db psql -U complex_schedule -d complex_schedule -v ON_ERR
 Para iniciar la aplicación, copia `.env.example` a `.env.local`, inicia la base
 con `docker compose up -d --wait db` y ejecuta `pnpm dev`. Las rutas
 `/api/users` y `/api/schedules` conectan Next.js con PostgreSQL;
-`/api/generate` ejecuta el algoritmo de nivel 5 sobre el JSON cargado.
+`/api/generate` ejecuta el algoritmo de nivel 6 sobre el JSON cargado.
 Supabase Auth se integrará en una etapa posterior.
 
 ## Pruebas del nivel 1

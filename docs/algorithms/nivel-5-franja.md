@@ -53,7 +53,7 @@ mantiene.
 
 ## Aplicación y pruebas
 
-`POST /api/generate` calcula el nivel 5 por defecto y admite los niveles
+`POST /api/generate` calcula este nivel con `level: 5` y admite los niveles
 0 al 4 explícitamente. La interfaz muestra la franja que se aplicó. Antes
 de guardar se reconstruyen las sesiones desde el catálogo y se comprueba
 el mismo intervalo.

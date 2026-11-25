@@ -174,12 +174,12 @@ export function readId(value: unknown, message: string): string {
   return id;
 }
 
-function normalizeDay(value: unknown): string {
+export function normalizeDay(value: unknown, label = "Día"): string {
   const key = String(value ?? "")
     .trim()
     .toLocaleLowerCase("es");
   if (!Object.prototype.hasOwnProperty.call(dayAliases, key)) {
-    throw new Error(`Día inválido: ${String(value)}`);
+    throw new Error(`${label} inválido: ${String(value)}`);
   }
   return dayAliases[key];
 }

@@ -10,6 +10,7 @@ import {
   type LevelFourResponse,
 } from "./prepare-level-four.ts";
 import { asRecord, normalizeTime } from "./schedule-input.ts";
+import type { PrioritizedResult } from "../../domain/scheduling/level-one.ts";
 
 export type LevelFiveResponse = Omit<LevelFourResponse, "level"> & {
   level: 5;
@@ -40,13 +41,29 @@ export function readLevelFiveInput(input: unknown) {
 export function prepareLevelFive(input: unknown, maxSchedules = 100): LevelFiveResponse {
   const parsed = readLevelFiveInput(input);
   const result = generateLevelFiveSchedules(parsed.courses, parsed, maxSchedules);
+  return { level: 5, ...formatPreferredWindowResult(parsed, result) };
+}
+
+export function formatPreferredWindowResult(
+  parsed: ReturnType<typeof readLevelFiveInput>,
+  result: PrioritizedResult,
+  additionalRequirements: readonly string[] = [],
+): Omit<LevelFiveResponse, "level"> {
   const { preferredWindow } = parsed;
-  const requirements = preferredWindow ? ["la franja horaria preferida"] : [];
-  return { level: 5, preferredWindow, ...formatGapResult(parsed, result, requirements) };
+  const requirements = preferredWindow
+    ? ["la franja horaria preferida", ...additionalRequirements]
+    : additionalRequirements;
+  return { preferredWindow, ...formatGapResult(parsed, result, requirements) };
 }
 
 export function validateLevelFiveSelection(input: unknown, selection: unknown) {
-  const parsed = readLevelFiveInput(input);
+  return validatePreferredWindowSelection(readLevelFiveInput(input), selection);
+}
+
+export function validatePreferredWindowSelection(
+  parsed: ReturnType<typeof readLevelFiveInput>,
+  selection: unknown,
+) {
   const result = validateGapSelection(parsed, selection);
   const { preferredWindow } = parsed;
   if (preferredWindow) {
