@@ -704,6 +704,7 @@
 
 .criteria div {
   display: flex;
+  flex-wrap: wrap;
   gap: 10px;
   margin-top: 14px;
 }

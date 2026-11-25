@@ -58,7 +58,7 @@ def query_database(sql):
     return result.stdout.strip()
 
 
-class NivelCeroSelenium(unittest.TestCase):
+class HorariosSelenium(unittest.TestCase):
     use_brave = False
 
     @classmethod
@@ -123,13 +123,14 @@ class NivelCeroSelenium(unittest.TestCase):
         self.heading("Horarios generados")
         self.assertEqual(
             [item.text for item in self.browser.find_elements(By.CSS_SELECTOR, ".metric strong")],
-            ["0", str(count)],
+            ["1", str(count)],
         )
         self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".schedule-card")), count)
 
     def download(self, label, filename):
-        self.click(label)
         path = self.downloads / filename
+        path.unlink(missing_ok=True)
+        self.click(label)
         self.wait.until(lambda _: path.is_file() and path.stat().st_size > 0)
         return path.read_text(encoding="utf-8")
 
@@ -160,16 +161,41 @@ class NivelCeroSelenium(unittest.TestCase):
         self.assertIn("Estadística · Grupo B-01", text)
         self.assertIn("Lunes 09:00–10:30", text)
 
-    def test_muestra_cero_opciones_si_hay_cruce_o_faltan_cupos(self):
+    def test_muestra_cero_opciones_si_faltan_cupos_o_se_cruzan_dos_altas(self):
         self.enter_as(OWNER)
-        for filename in ["cruce-inevitable.json", "sin-cupos.json"]:
-            with self.subTest(filename=filename):
+        conflict = json.loads((FIXTURES / "cruce-inevitable.json").read_text(encoding="utf-8"))
+        conflict["estudiante"]["materias"][1]["prioridad"] = "alta"
+        two_required = self.files / "altas-cruzadas.json"
+        two_required.write_text(json.dumps(conflict), encoding="utf-8")
+        for path, reason in [
+            (FIXTURES / "sin-cupos.json", "Materia alta A: sin grupos con cupos"),
+            (two_required, "materias altas (A, B)"),
+        ]:
+            with self.subTest(filename=path.name):
                 self.open_upload()
-                self.upload(FIXTURES / filename)
+                self.upload(path)
                 self.wait_valid()
                 self.generate(0)
                 notice = self.browser.find_element(By.CSS_SELECTOR, "main .footnote")
-                self.assertIn("No se encontró una combinación", notice.text)
+                self.assertIn(reason, notice.text)
+
+    def test_muestra_y_exporta_las_omisiones_de_un_horario_parcial(self):
+        self.enter_as(OWNER)
+        self.open_upload()
+        self.upload(FIXTURES / "cruce-inevitable.json")
+        self.wait_valid()
+        self.generate(1)
+        self.assertIn("Estadística", self.browser.find_element(By.CSS_SELECTOR, ".omitted").text)
+        self.click("Ver calendario")
+        self.heading("Horario 1")
+        self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".class-block")), 1)
+        result = json.loads(self.download("Descargar JSON", "Horario 1.json"))
+        self.assertEqual([course["sectionId"] for course in result["courses"]], ["A-01"])
+        self.assertEqual(result["totalCredits"], 4)
+        self.assertEqual(result["omitted"][0]["courseId"], "B")
+        text = self.download("Descargar TXT", "Horario 1.txt")
+        self.assertIn("Materias omitidas", text)
+        self.assertIn("Estadística (hay grupos elegibles que se cruzan", text)
 
     def test_rechaza_archivos_invalidos_y_permite_corregirlos(self):
         self.enter_as(OWNER)
@@ -179,9 +205,14 @@ class NivelCeroSelenium(unittest.TestCase):
 
         malformed = self.files / "incompleto.json"
         malformed.write_text('{"catalogo":', encoding="utf-8")
+        invalid_priority = self.files / "prioridad-invalida.json"
+        source = json.loads((FIXTURES / "prioridades.json").read_text(encoding="utf-8"))
+        source["estudiante"]["materias"][0]["prioridad"] = "urgente"
+        invalid_priority.write_text(json.dumps(source), encoding="utf-8")
         for path, error in [
             (malformed, "no contiene JSON válido"),
             (FIXTURES / "cupos-invalidos.json", "cuposDisponibles"),
+            (invalid_priority, "prioridad de la materia A"),
         ]:
             with self.subTest(filename=path.name):
                 self.upload(path)
@@ -197,7 +228,7 @@ class NivelCeroSelenium(unittest.TestCase):
         self.wait_valid()
         self.generate(1)
 
-    def test_guarda_y_reabre_un_horario_con_dos_participantes(self):
+    def test_prefiere_la_media_y_reabre_el_horario_con_dos_participantes(self):
         suffix = uuid4().hex
         user_id = f"selenium-{suffix}"
         extra_participant = f"Participante Selenium {suffix[:8]}"
@@ -214,7 +245,7 @@ class NivelCeroSelenium(unittest.TestCase):
         self.browser.refresh()
         self.enter_as(OWNER)
         self.open_upload()
-        source_file = FIXTURES / "contiguos-con-grupo-lleno.json"
+        source_file = FIXTURES / "prioridades.json"
         self.upload(source_file)
         self.wait_valid()
 
@@ -228,6 +259,8 @@ class NivelCeroSelenium(unittest.TestCase):
             By.XPATH, '//label[span[contains(., "Nombre para guardar")]]//input'
         ).send_keys(title)
         self.generate(1)
+        self.assertIn("Bases de datos", self.browser.find_element(By.CSS_SELECTOR, ".omitted").text)
+        self.assertIn("máximo de créditos", self.browser.find_element(By.CSS_SELECTOR, ".omitted").text)
         self.click("Guardar")
         self.wait.until(expected.visibility_of_element_located(
             (By.XPATH, '//main//button[normalize-space(.)="Guardado"]')
@@ -244,16 +277,21 @@ class NivelCeroSelenium(unittest.TestCase):
                 self.heading("Mis horarios guardados")
                 scope = f'//article[.//h2[normalize-space(.)="{title}"]]'
                 card = self.wait.until(expected.visibility_of_element_located((By.XPATH, scope)))
-                self.assertIn("Nivel alcanzado: 0", card.text)
+                self.assertIn("Nivel alcanzado: 1", card.text)
                 self.assertIn(PARTICIPANT, card.text)
                 self.assertIn(extra_participant, card.text)
                 self.click("Abrir calendario", scope)
                 self.heading(title)
-                self.assertEqual(len(self.browser.find_elements(By.CSS_SELECTOR, ".class-block")), 2)
+                sessions = self.browser.find_elements(By.CSS_SELECTOR, ".class-block")
+                self.assertEqual([session.get_attribute("title") for session in sessions], [
+                    "Algoritmos · Grupo A-01 · 08:00–09:00",
+                    "Estadística · Grupo M-01 · 09:00–10:00",
+                ])
+                self.assertIn("Bases de datos", self.browser.find_element(By.CSS_SELECTOR, ".omitted").text)
 
 
 if __name__ == "__main__":
     if "--brave" in sys.argv:
         sys.argv.remove("--brave")
-        NivelCeroSelenium.use_brave = True
+        HorariosSelenium.use_brave = True
     unittest.main()

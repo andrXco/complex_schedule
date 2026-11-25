@@ -5,17 +5,17 @@
 - **Presentación (`src/components`, `app/`)**: Next.js App Router muestra el
   flujo y consume rutas HTTP. No implementa reglas de compatibilidad ni SQL.
 - **Aplicación (`src/application`)**: convierte el JSON del proyecto al modelo
-  de dominio y coordina la generación del nivel cero.
+  de dominio y coordina la generación y validación de los niveles 0 y 1.
 - **Dominio (`src/domain`)**: contiene los tipos y algoritmos puros de
   restricciones. No depende de React, Docker ni PostgreSQL.
 - **Infraestructura (`src/infrastructure/postgres`, `database`)**: encapsula el
   pool de PostgreSQL, el esquema, las migraciones y los datos de desarrollo.
 
 La interfaz permite seleccionar un usuario propietario y varios participantes.
-El resultado de nivel cero se calcula para el estudiante del JSON de entrada;
-los participantes se asocian al horario guardado y pueden consultarlo desde su
-selector local. Cada resultado conserva tanto el horario generado como el JSON
-de origen para que futuras etapas puedan volver a procesarlo.
+El [nivel 1](algorithms/nivel-1-prioridades.md) se calcula para el estudiante
+del JSON de entrada. Los participantes se asocian al horario guardado y pueden
+consultarlo desde su selector local. Cada resultado conserva el horario
+generado y el JSON de origen para que futuras etapas puedan volver a procesarlos.
 
 ## Relación entre usuarios y horarios
 

@@ -1,10 +1,8 @@
 "use client";
 
 import { useEffect, useRef, useState, type ReactNode } from "react";
-import type {
-  GeneratedSchedule,
-  PreparedLevelZero,
-} from "../application/scheduling/prepare-level-zero";
+import type { GeneratedSchedule } from "../application/scheduling/prepare-level-zero";
+import type { LevelOneResponse } from "../application/scheduling/prepare-level-one";
 
 type View = "auth" | "home" | "generated" | "saved" | "upload" | "calendar";
 type User = { id: string; name: string; email: string };
@@ -580,7 +578,7 @@ function Generated({
   onCalendar,
   onUpload,
 }: {
-  result: PreparedLevelZero | null;
+  result: LevelOneResponse | null;
   source: unknown;
   savedIndices: Set<number>;
   savingIndex: number | null;
@@ -598,8 +596,8 @@ function Generated({
         <>
           <section className="summary-card">
             <div className="metric">
-              <span>Nivel alcanzado</span>
-              <strong>0</strong>
+              <span>{result.schedules.length ? "Nivel alcanzado" : "Nivel evaluado"}</span>
+              <strong>{result.level}</strong>
             </div>
             <div className="metric">
               <span>Horarios válidos</span>
@@ -613,17 +611,17 @@ function Generated({
               <div>
                 <em>Sesiones sin cruces</em>
                 <em>Grupos con cupo</em>
+                <em>Prioridades de materias</em>
+                {result.maxCredits !== null && (
+                  <em>Hasta {result.maxCredits} créditos al agregar o sustituir</em>
+                )}
               </div>
             </div>
           </section>
-          {result.schedules.length === 0 && (
-            <p className="footnote">
-              No se encontró una combinación sin cruces y con cupo en todos los grupos.
-            </p>
-          )}
+          {result.reason && <p className="footnote">{result.reason}</p>}
           <div className="schedule-list">
             {result.schedules.map((schedule, index) => {
-              const item = { title: schedule.name, level: 0, schedule, source };
+              const item = { title: schedule.name, level: result.level, schedule, source };
               const saved = savedIndices.has(index);
               return (
                 <article className="schedule-card" key={schedule.name}>
@@ -631,10 +629,7 @@ function Generated({
                     <h2>{schedule.name}</h2>
                     <span className="credit-pill">{scheduleSize(item)}</span>
                   </div>
-                  <div className="omitted">
-                    <strong>Materias omitidas:</strong>
-                    <span className="plain">Ninguna</span>
-                  </div>
+                  <OmittedCourses item={item} />
                   <div className="actions">
                     <Button primary icon="calendar" onClick={() => onCalendar(item)}>
                       Ver calendario
@@ -715,7 +710,7 @@ function Saved({
           const item: ScheduleView = {
             title: record.title,
             level: record.level,
-            schedule: { name: record.title, courses: record.schedule.courses ?? [] },
+            schedule: { ...record.schedule, name: record.title, courses: record.schedule.courses ?? [] },
             source: record.source_json,
           };
           return (
@@ -789,6 +784,7 @@ function Calendar({ item, onBack }: { item: ScheduleView; onBack: () => void }) 
           <DownloadButtons item={item} fullLabel />
         </div>
       </div>
+      {!!item.schedule.omitted?.length && <OmittedCourses item={item} />}
       {sessions.length === 0 ? (
         <p className="footnote">Este horario no tiene sesiones registradas.</p>
       ) : (
@@ -845,7 +841,7 @@ function catalogEntries(source: unknown) {
   if (!Array.isArray(catalog?.catalogo?.materias)) return entries;
   for (const entry of catalog.catalogo.materias) {
     if (!entry || (typeof entry.id !== "string" && typeof entry.id !== "number")) continue;
-    entries.set(String(entry.id), {
+    entries.set(String(entry.id).trim(), {
       name: typeof entry.nombre === "string" ? entry.nombre : undefined,
       credits: typeof entry.creditos === "number" ? entry.creditos : undefined,
     });
@@ -853,7 +849,32 @@ function catalogEntries(source: unknown) {
   return entries;
 }
 
+function omissionLabels(item: ScheduleView) {
+  const catalog = catalogEntries(item.source);
+  return (item.schedule.omitted ?? []).map(({ courseId, reasons }) => ({
+    courseId,
+    label: `${catalog.get(courseId)?.name ?? courseId} (${reasons.join(", ")})`,
+  }));
+}
+
+function OmittedCourses({ item }: { item: ScheduleView }) {
+  const omissions = omissionLabels(item);
+  return (
+    <div className="omitted">
+      <strong>Materias omitidas</strong>
+      {omissions.length ? (
+        omissions.map(({ courseId, label }) => <span key={courseId}>{label}</span>)
+      ) : (
+        <span className="plain">Ninguna</span>
+      )}
+    </div>
+  );
+}
+
 function scheduleSize(item: ScheduleView) {
+  if (item.schedule.totalCredits !== undefined) {
+    return `${item.schedule.totalCredits} créditos totales`;
+  }
   const catalog = catalogEntries(item.source);
   const credits = item.schedule.courses.map(({ courseId }) => catalog.get(courseId)?.credits);
   if (credits.length > 0 && credits.every((credit): credit is number => credit !== undefined)) {
@@ -878,10 +899,15 @@ function DownloadButtons({ item, fullLabel = false }: { item: ScheduleView; full
           `  ${days[Number(session.day) - 1]} ${formatTime(session.startMinute)}–${formatTime(session.endMinute)}`,
       ),
     ]);
+    const omissions = omissionLabels(item);
+    const summary = item.level === 1 ? [`Nivel ${item.level} · ${scheduleSize(item)}`] : [];
+    const omitted = omissions.length
+      ? ["", "Materias omitidas", ...omissions.map(({ label }) => `  ${label}`)]
+      : [];
     const content =
       extension === "json"
         ? JSON.stringify(item.schedule, null, 2)
-        : [item.title, ...text].join("\n");
+        : [item.title, ...summary, ...text, ...omitted].join("\n");
     const url = URL.createObjectURL(
       new Blob([content], {
         type: extension === "json" ? "application/json" : "text/plain;charset=utf-8",
@@ -936,7 +962,7 @@ function SignedIn({
 }) {
   const [view, setView] = useState<Exclude<View, "auth">>("home");
   const [file, setFile] = useState<ValidatedFile | null>(null);
-  const [result, setResult] = useState<PreparedLevelZero | null>(null);
+  const [result, setResult] = useState<LevelOneResponse | null>(null);
   const [participantIds, setParticipantIds] = useState<string[]>([]);
   const [title, setTitle] = useState("");
   const [savedIndices, setSavedIndices] = useState(new Set<number>());
@@ -967,7 +993,7 @@ function SignedIn({
     setStatus("");
     setGenerating(true);
     try {
-      setResult(await post<PreparedLevelZero>("/api/generate", { sourceJson: file.source }));
+      setResult(await post<LevelOneResponse>("/api/generate", { sourceJson: file.source }));
       setSavedIndices(new Set());
       navigate("generated");
     } catch (error) {
@@ -979,7 +1005,7 @@ function SignedIn({
 
   async function save(index: number) {
     const schedule = result?.schedules[index];
-    if (!file || !schedule || savingIndex !== null || savedIndices.has(index)) return;
+    if (!file || !result || !schedule || savingIndex !== null || savedIndices.has(index)) return;
     setStatus("");
     setSavingIndex(index);
     try {
@@ -987,7 +1013,7 @@ function SignedIn({
         ownerUserId: user.id,
         participantIds,
         title: title.trim() || schedule.name,
-        level: 0,
+        level: result.level,
         sourceJson: file.source,
         schedule,
       });
